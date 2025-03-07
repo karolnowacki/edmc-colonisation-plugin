@@ -51,6 +51,6 @@ def plugin_app(parent):
     this.ui = MainUi(config)
     this.plugin.setUi(this.ui)
     ui = this.ui.plugin_app(parent)
-    ui.grid(row=1, column=0, sticky=tk.EW)
+    ui.grid(row=1, column=0)
     this.plugin.updateDisplay()
     return ui

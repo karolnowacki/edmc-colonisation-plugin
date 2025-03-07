@@ -119,12 +119,14 @@ class ColonizationPlugin:
     def getTable(self):
         needed = self.currentConstruction.needed if self.currentConstruction else self.getTotalShoppingList()
         table = []
+        print(self.localCommodities)
         for commodity, qty in needed.items():
             table.append({
                 'commodityName': self.commodityMap.get(commodity, commodity),
                 'needed': qty,
                 'cargo': self.cargo.get(commodity, 0),
-                'carrier': self.carrier.get(commodity, 0)
+                'carrier': self.carrier.get(commodity, 0),
+                'available': commodity in self.localCommodities
             })
         return table
 

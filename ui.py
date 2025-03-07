@@ -118,11 +118,10 @@ class MainUi:
                 self.rows[row]['cargo']['fg'] = 'green'
                 self.rows[row]['carrier']['fg'] = 'green'
             else:
-                #if i['item'] in this.commodities:
-                #    self.rows[row]['name']['fg'] = '#FFF'
-                #else:
-                #    self.rows[row]['name']['fg'] = config.get_str('dark_text')
-                self.rows[row]['name']['fg'] = self.config.get_str('dark_text')
+                if i['available']:
+                    self.rows[row]['name']['fg'] = '#FFF'
+                else:
+                    self.rows[row]['name']['fg'] = self.config.get_str('dark_text')
                 self.rows[row]['needed']['fg'] = self.config.get_str('dark_text')
                 self.rows[row]['cargo']['fg'] = self.config.get_str('dark_text')
                 self.rows[row]['carrier']['fg'] = self.config.get_str('dark_text')
