@@ -37,6 +37,9 @@ def plugin_prefs(parent, cmdr, is_beta):
     this.pref.on('forceFCload', forceFCload)
     return frame
 
+def prefs_changed(cmdr, is_beta):
+    this.plugin.updateDisplay()
+
 def capi_fleetcarrier(data):
     this.plugin.capi_fleetcarrier(data)
 
@@ -48,5 +51,6 @@ def plugin_app(parent):
     this.ui = MainUi(config)
     this.plugin.setUi(this.ui)
     ui = this.ui.plugin_app(parent)
-    ui.grid(row=1, column=0)
+    ui.grid(row=1, column=0, sticky=tk.EW)
+    this.plugin.updateDisplay()
     return ui

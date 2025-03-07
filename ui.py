@@ -58,14 +58,18 @@ class MainUi:
         self.rows = list()
         for i in range(self.ROWS):
             labels = {}
-            labels['name'] = tk.Label(frame, text=i)
-            labels['name'].grid(row=i+1, column=0)
-            labels['needed'] = tk.Label(frame, text="b")
-            labels['needed'].grid(row=i+1, column=1)
-            labels['cargo'] = tk.Label(frame, text="c")
-            labels['cargo'].grid(row=i+1, column=2)
-            labels['carrier'] = tk.Label(frame, text="c")
-            labels['carrier'].grid(row=i+1, column=3)
+            labels['name'] = tk.Label(frame)
+            labels['name'].grid_configure(row=i+1, column=0)
+            labels['name'].grid_remove()
+            labels['needed'] = tk.Label(frame)
+            labels['needed'].grid_configure(row=i+1, column=1)
+            labels['needed'].grid_remove()
+            labels['cargo'] = tk.Label(frame,)
+            labels['cargo'].grid_configure(row=i+1, column=2)
+            labels['cargo'].grid_remove()
+            labels['carrier'] = tk.Label(frame)
+            labels['carrier'].grid_configure(row=i+1, column=3)
+            labels['carrier'].grid_remove()
             self.rows.append(labels)
 
         return self.frame

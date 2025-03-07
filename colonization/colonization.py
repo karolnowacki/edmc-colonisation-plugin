@@ -262,3 +262,11 @@ class ColonizationPlugin:
         self.updateDisplay()
         self.save()
             
+    def removeConstruction(self, construction):
+        self.constructions.remove(construction)
+        if self.currentConstruction == construction:
+            self.currentConstructionId = -1
+            self.currentConstruction = None
+        self.updateDisplay()
+        self.save()
+        
