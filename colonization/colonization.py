@@ -18,13 +18,14 @@ class ColonizationPlugin:
         self.constructions:list[Construction] = []
         self.carrier:dict[str,int] = {}
         self.cargo:dict[str,int] = {}
-        self.localCommodities:list[str] = []
         self.currentConstruction:Construction|None = None
         self.currentConstructionId:int = -1
         self.pluginDir:str = None
         self.ui:MainUi = None
         self.dockedConstruction = None
         self.fcCallsign = None
+        self.markets = {}
+        self.currentMarketId:int = None
         logger.debug("initialized")
 
     def plugin_start3(self, plugin_dir:str):
@@ -32,10 +33,11 @@ class ColonizationPlugin:
         self.load()
 
     def cmdr_data(self, data, is_beta: bool):
-        self.localCommodities = []
+        localCommodities = []
         for commodity in data['lastStarport'].get('commodities') or []:
             if commodity['stock'] > 0:
-                self.localCommodities.append(commodity['name'].lower())
+                localCommodities.append(commodity['name'].lower())
+        self.markets[data['lastStarport'].get('id')] = localCommodities
         self.updateDisplay()
 
     def journal_entry(self, cmdr, is_beta, system, station, entry, state):
@@ -66,13 +68,14 @@ class ColonizationPlugin:
 
         if entry['event'] == 'StartUp':
             self.cargo = state['Cargo'].copy()
+            self.currentMarketId = state['MarketID']
             self.setDocked(state)
 
         if entry['event'] == 'Docked':
             self.setDocked(state)
 
         if entry['event'] == "Undocked":
-            self.localCommodities = []
+            self.currentMarketId = None
             self.dockedConstruction = None
             self.updateDisplay()
             
@@ -122,13 +125,14 @@ class ColonizationPlugin:
     def getTable(self):
         needed = self.currentConstruction.needed if self.currentConstruction else self.getTotalShoppingList()
         table = []
+        localCommodities = self.markets.get(self.currentMarketId, []) if self.currentMarketId else []
         for commodity, qty in needed.items():
             table.append({
                 'commodityName': self.commodityMap.get(commodity, commodity),
                 'needed': qty,
                 'cargo': self.cargo.get(commodity, 0),
                 'carrier': self.carrier.get(commodity, 0),
-                'available': commodity in self.localCommodities
+                'available': commodity in localCommodities
             })
         return table
 
@@ -242,6 +246,7 @@ class ColonizationPlugin:
         self.updateDisplay()
 
     def setDocked(self, state):
+        self.currentMarketId=state['MarketID']
         if state['StationType'] == "PlanetaryConstructionDepot" or state['StationType'] == "SpaceConstructionDepot":
             self.dockedConstruction = {
                 'StationName': state['StationName'],
