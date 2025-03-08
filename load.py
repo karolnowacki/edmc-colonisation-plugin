@@ -1,12 +1,12 @@
 import sys
-import csv
-#import requests
+import logging
 import tkinter as tk
 import myNotebook as nb
 from config import config
 from companion import CAPIData, session
-import json
 from time import time
+from os import path 
+from EDMCLogging import get_main_logger
 
 from colonization.colonization import ColonizationPlugin
 from ui import MainUi
@@ -14,6 +14,8 @@ from pref import PreferencesUi
 
 this = sys.modules[__name__] 
 this.ROWS = 25
+
+logger = get_main_logger()
 
 def plugin_start3(plugin_dir):
     this.plugin = ColonizationPlugin(config)

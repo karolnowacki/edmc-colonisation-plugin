@@ -1,5 +1,8 @@
 import json
 
+from EDMCLogging import get_main_logger
+logger = get_main_logger()
+
 class Construction:
     
     def __init__(self, name:str, needed:str, system=None, stationName=None, marketId=None):
@@ -11,6 +14,7 @@ class Construction:
         self.marketId:int = marketId
 
     def deliver(self, commodity:str, quantity:int):
+        logger.info("Delivery %d of %s to %s", quantity, commodity, self.name)
         if commodity in self.needed:
             self.needed[commodity] -= quantity
 

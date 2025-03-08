@@ -7,6 +7,9 @@ from .construction import Construction
 from .requirements import requirements
 from ui import MainUi
 
+from EDMCLogging import get_main_logger
+logger = get_main_logger()
+
 class ColonizationPlugin:
 
     def __init__(self, config):
@@ -22,6 +25,7 @@ class ColonizationPlugin:
         self.ui:MainUi = None
         self.dockedConstruction = None
         self.fcCallsign = None
+        logger.debug("initialized")
 
     def plugin_start3(self, plugin_dir:str):
         self.pluginDir = plugin_dir
@@ -101,7 +105,6 @@ class ColonizationPlugin:
                 self.ui.setTitle("Total")
                 self.ui.setStation("")
             self.ui.setTable(self.getTable())
-            print(self.ui.__dict__)
             if self.ui.bind_btn:
                 if self.currentConstruction and self.dockedConstruction and self.currentConstruction.marketId == None:
                     self.ui.bind_btn.grid()
@@ -119,7 +122,6 @@ class ColonizationPlugin:
     def getTable(self):
         needed = self.currentConstruction.needed if self.currentConstruction else self.getTotalShoppingList()
         table = []
-        print(self.localCommodities)
         for commodity, qty in needed.items():
             table.append({
                 'commodityName': self.commodityMap.get(commodity, commodity),
@@ -145,16 +147,21 @@ class ColonizationPlugin:
         self.constructions = []
         filePath = path.join(self.pluginDir, "constructions.json")
         if path.isfile(filePath):
-            json.load(open(filePath, 'r', encoding='utf-8'))
-            for c in json.loads(open(path.join(self.pluginDir, "constructions.json"), 'r').read()):
+            for c in json.load(open(filePath, 'r', encoding='utf-8')):
                 self.constructions.append(Construction(**c))
+        self.carrier = {}
+        filePath = path.join(self.pluginDir, "fccargo.json")
+        if path.isfile(filePath):
+            self.carrier = json.load(open(filePath, 'r', encoding='utf-8'))       
             
     def save(self):
         with open(path.join(self.pluginDir, "constructions.json"), 'w', encoding='utf-8') as file:
             json.dump(self.constructions, file, ensure_ascii=False, indent=4, cls=construction.ConstructionEncoder)
+        with open(path.join(self.pluginDir, "fccargo.json"), 'w', encoding='utf-8') as file:
+            json.dump(self.carrier, file, ensure_ascii=False, indent=4, sort_keys=True)
         
     def addConstruction(self, name:str, type:str|None=None) -> Construction:
-        print("Adding construction", name, type)
+        logger.info("Adding construction %s %s", name, type)
         construction = Construction(name, requirements.get(type).get('needed', {}))
         self.constructions.append(construction)
         return construction
