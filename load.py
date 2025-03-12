@@ -48,6 +48,7 @@ def capi_fleetcarrier(data):
 def forceFCload(event):
     r = session.requests_session.get(session.capi_host_for_galaxy() + session.FRONTIER_CAPI_PATH_FLEETCARRIER)
     this.plugin.capi_fleetcarrier(r.json())
+    this.pref.updateFC(this.plugin.carrier)
 
 def plugin_app(parent):
     this.ui = MainUi(config)

@@ -5,7 +5,7 @@ logger = get_main_logger()
 
 class Construction:
     
-    def __init__(self, name:str, needed:str, system=None, stationName=None, marketId=None):
+    def __init__(self, name:str, needed:dict[str,int], system=None, stationName=None, marketId=None):
         self.name:str = name
         self.needed:dict[str,int] = needed
         

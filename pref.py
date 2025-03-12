@@ -21,8 +21,16 @@ class PreferencesUi:
         self.frame.columnconfigure(1, weight=1)
         self.frame.grid(sticky=tk.EW)
 
-        btn = nb.Button(self.frame, text="Load FC data", command=partial(self.event, 'forceFCload', None))
-        btn.grid(row=self.row, sticky=tk.EW)
+        frame = nb.Frame(self.frame)
+        frame.grid(row=self.row, sticky=tk.EW)
+        nb.Label(frame, text="Fleet carrier call sign:").grid(row=0, column=0)
+        self.FCcallsign = nb.Label(frame, text=self.plugin.carrier.callSign)
+        self.FCcallsign.grid(row=0, column=1)
+        nb.Label(frame, text="Fleet carrier last update:").grid(row=1, column=0)
+        self.FClastupdate = nb.Label(frame, text=self.plugin.carrier.lastSync)
+        self.FClastupdate.grid(row=1, column=1)
+        btn = nb.Button(frame, text="Load FC data", command=partial(self.event, 'forceFCload', None))
+        btn.grid(row=3, columnspan = 2, sticky=tk.EW)
         self.nextRow()
         
         self.constructionList = nb.Frame(self.frame)
@@ -150,3 +158,7 @@ class PreferencesUi:
             widget.destroy()
         self.savebtn.configure(state=tk.DISABLED)
         self.buildConstructionList()
+        
+    def updateFC(self, carrier):
+        self.FCcallsign['text'] = str(carrier.callSign)
+        self.FClastupdate['text'] = str(carrier.lastSync)

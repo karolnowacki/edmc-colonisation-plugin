@@ -5,6 +5,7 @@ from os import path
 from . import construction
 from .construction import Construction
 from .requirements import requirements
+from .fleetcarrier import FleetCarrier
 from ui import MainUi
 
 from EDMCLogging import get_main_logger
@@ -16,14 +17,13 @@ class ColonizationPlugin:
         self.config = config
         self.commodityMap:dict[str,str] = self.getCommodityMap()
         self.constructions:list[Construction] = []
-        self.carrier:dict[str,int] = {}
+        self.carrier:FleetCarrier = FleetCarrier()
         self.cargo:dict[str,int] = {}
         self.currentConstruction:Construction|None = None
         self.currentConstructionId:int = -1
         self.pluginDir:str = None
         self.ui:MainUi = None
         self.dockedConstruction = None
-        self.fcCallsign = None
         self.markets = {}
         self.currentMarketId:int = None
         logger.debug("initialized")
@@ -41,18 +41,27 @@ class ColonizationPlugin:
         self.updateDisplay()
 
     def journal_entry(self, cmdr, is_beta, system, station, entry, state):
+        
         if entry['event'] == 'MarketBuy':
             self.addCargo(entry['Type'], entry['Count'])
+            if (self.carrier.callSign and state['StationName'] == self.carrier.callSign):
+                self.carrier.removeCargo(entry['Type'], entry['Count'])
+            self.updateDisplay()
+            
+        if entry['event'] == "MarketSell":
+            self.removeCargo(entry['Type'], entry['Count'])
+            if (self.carrier.callSign and state['StationName'] == self.carrier.callSign):
+                self.carrier.addCargo(entry['Type'], entry['Count'])
             self.updateDisplay()
 
         if entry['event'] == "CargoTransfer":
             for t in entry['Transfers']:    
                 if t['Direction'] == "toship":
                     self.addCargo(t['Type'], t['Count'])
-                    self.removeCarrier(t['Type'], t['Count'])
+                    self.carrier.removeCargo(t['Type'], t['Count'])
                 if t['Direction'] == "tocarrier":
                     self.removeCargo(t['Type'], t['Count'])
-                    self.addCarrier(t['Type'], t['Count'])
+                    self.carrier.addCargo(t['Type'], t['Count'])
             self.updateDisplay()
 
         if entry['event'] == "Cargo":
@@ -80,17 +89,7 @@ class ColonizationPlugin:
             self.updateDisplay()
             
     def capi_fleetcarrier(self, data):
-        self.fcCallsign = data['name']['callsign']
-        if not self.fcCallsign:
-            return
-        
-        self.carrier = {}
-        for c in data['cargo']:
-            cn = c['commodity'].lower()
-            if cn in self.carrier:
-                self.carrier[cn] += c['qty']
-            else:
-                self.carrier[cn] = c['qty']
+        self.carrier.syncData(data)
         self.updateDisplay()
         
     def updateDisplay(self):
@@ -131,7 +130,7 @@ class ColonizationPlugin:
                 'commodityName': self.commodityMap.get(commodity, commodity),
                 'needed': qty,
                 'cargo': self.cargo.get(commodity, 0),
-                'carrier': self.carrier.get(commodity, 0),
+                'carrier': self.carrier.getCargo(commodity),
                 'available': commodity in localCommodities
             })
         return table
@@ -153,21 +152,20 @@ class ColonizationPlugin:
         if path.isfile(filePath):
             for c in json.load(open(filePath, 'r', encoding='utf-8')):
                 self.constructions.append(Construction(**c))
-        self.carrier = {}
-        filePath = path.join(self.pluginDir, "fccargo.json")
-        if path.isfile(filePath):
-            self.carrier = json.load(open(filePath, 'r', encoding='utf-8'))       
+        self.carrier.load(path.join(self.pluginDir, "fccargo.json"))   
             
     def save(self):
         with open(path.join(self.pluginDir, "constructions.json"), 'w', encoding='utf-8') as file:
             json.dump(self.constructions, file, ensure_ascii=False, indent=4, cls=construction.ConstructionEncoder)
-        with open(path.join(self.pluginDir, "fccargo.json"), 'w', encoding='utf-8') as file:
-            json.dump(self.carrier, file, ensure_ascii=False, indent=4, sort_keys=True)
+        #self.carrier.save(path.join(self.pluginDir, "fccargo.json"))
+        
         
     def addConstruction(self, name:str, type:str|None=None) -> Construction:
         logger.info("Adding construction %s %s", name, type)
         construction = Construction(name, requirements.get(type).get('needed', {}))
         self.constructions.append(construction)
+        self.updateDisplay()
+        self.save()
         return construction
     
     def getShoppingList(self, marketId:int|None=None) -> dict[str, int]:
@@ -198,20 +196,6 @@ class ColonizationPlugin:
         else:
             self.cargo[commodity] = 0
         return self.cargo[commodity]
-        
-    def addCarrier(self, commodity:str, qty:int) -> int:
-        if commodity in self.carrier:
-            self.carrier[commodity] += qty
-        else:
-            self.carrier[commodity] = qty
-        return self.carrier[commodity]
-
-    def removeCarrier(self, commodity:str, qty:int) -> int:
-        if commodity in self.carrier:
-            self.carrier[commodity] -= qty
-        else:
-            self.carrier[commodity] = 0
-        return self.carrier[commodity]
 
     def setUi(self, ui:MainUi):
         self.ui = ui
