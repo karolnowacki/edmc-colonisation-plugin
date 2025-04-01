@@ -92,7 +92,7 @@ class ColonizationPlugin:
         self.carrier.syncData(data)
         self.updateDisplay()
         
-    def updateDisplay(self):
+    def updateDisplay(self, event=None):
         if self.ui:
             if self.currentConstruction:
                 self.ui.setTitle(self.currentConstruction.name)
@@ -106,7 +106,7 @@ class ColonizationPlugin:
             else:
                 self.ui.setTitle("Total")
                 self.ui.setStation("")
-            self.ui.setTable(self.getTable())
+            self.ui.setTable(self.getTable(), self.dockedConstruction and self.dockedConstruction['MarketID'] == self.currentConstruction.marketId)
             if self.ui.bind_btn:
                 if self.currentConstruction and self.dockedConstruction and self.currentConstruction.marketId == None:
                     self.ui.bind_btn.grid()
@@ -202,6 +202,7 @@ class ColonizationPlugin:
         ui.on('prev', self.prevConstruction)
         ui.on('next', self.nextConstruction)
         ui.on('bind', self.bindStation)
+        ui.on('update', self.updateDisplay)
         self.updateDisplay()
 
     def prevConstruction(self, event):

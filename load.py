@@ -28,9 +28,6 @@ def cmdr_data(data: CAPIData, is_beta: bool):
 
 def journal_entry(cmdr, is_beta, system, station, entry, state):
     this.plugin.journal_entry(cmdr, is_beta, system, station, entry, state)
-    if entry['event'] in ("StartUp", "LoadGame"):
-        query_time = int(time())
-        session.fleetcarrier(query_time=query_time)
 
 def plugin_prefs(parent, cmdr, is_beta):
     this.pref = PreferencesUi(config, this.plugin)
