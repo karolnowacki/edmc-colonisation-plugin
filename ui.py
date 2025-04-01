@@ -65,7 +65,7 @@ class MainUi:
         self.bind_btn.grid(row=2, column=0, sticky=tk.EW, columnspan=5)
 
         self.table_frame = tk.Frame(self.frame, highlightthickness=1)
-        self.table_frame.columnconfigure(3, weight=1)
+        self.table_frame.columnconfigure(0, weight=1)
         self.table_frame.grid(row=1, column=0, sticky=tk.EW)
 
         tk.Label(self.table_frame, text="Commodity").grid(row=0, column=0)
