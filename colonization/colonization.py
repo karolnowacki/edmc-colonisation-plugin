@@ -9,6 +9,7 @@ from .fleetcarrier import FleetCarrier
 from ui import MainUi
 
 from EDMCLogging import get_main_logger
+from monitor import monitor
 logger = get_main_logger()
 
 class ColonizationPlugin:
@@ -97,7 +98,7 @@ class ColonizationPlugin:
             if self.currentConstruction:
                 self.ui.setTitle(self.currentConstruction.name)
                 if self.currentConstruction.marketId:
-                    if (self.dockedConstruction and self.dockedConstruction['MarketID'] == self.currentConstruction.marketId):
+                    if (self.dockedConstruction and self.currentConstruction and self.dockedConstruction.get('MarketID', 0) == self.currentConstruction.marketId):
                         self.ui.setStation("{} (docked)".format(self.currentConstruction.stationName), 'green')
                     else:
                         self.ui.setStation(self.currentConstruction.stationName)
@@ -106,14 +107,19 @@ class ColonizationPlugin:
             else:
                 self.ui.setTitle("Total")
                 self.ui.setStation("")
-            self.ui.setTable(self.getTable(), self.dockedConstruction and self.dockedConstruction['MarketID'] == self.currentConstruction.marketId)
+            dockedTo = False
+            if self.dockedConstruction and self.currentConstruction and self.dockedConstruction.get('MarketID', 0) == self.currentConstruction.marketId:
+                dockedTo = "market"
+            if self.carrier.callSign and monitor.state['StationName'] == self.carrier.callSign:
+                dockedTo = "carrier"
+            self.ui.setTable(self.getTable(), dockedTo)
             if self.ui.bind_btn:
                 if self.currentConstruction and self.dockedConstruction and self.currentConstruction.marketId == None:
                     self.ui.bind_btn.grid()
                 else:
                     self.ui.bind_btn.grid_remove()
             if self.ui.prev_btn and self.ui.next_btn:
-                if self.dockedConstruction and self.currentConstruction and self.dockedConstruction['MarketID'] == self.currentConstruction.marketId:
+                if self.dockedConstruction and self.currentConstruction and self.dockedConstruction.get('MarketID', 0) == self.currentConstruction.marketId:
                     self.ui.prev_btn.grid_remove()
                     self.ui.next_btn.grid_remove()
                 else:

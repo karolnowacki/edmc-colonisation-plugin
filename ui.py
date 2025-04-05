@@ -8,7 +8,7 @@ class ViewMode(Enum):
     FILTERED = 1
 
 class MainUi:
-    ROWS = 25
+    ROWS = 35
     iconDir = path.join(path.dirname(__file__), "icons")
     
     def __init__(self, config):
@@ -125,9 +125,10 @@ class MainUi:
                     continue
                 if (toBuy <= 0):
                     continue
+            if (self.view_mode == ViewMode.FILTERED and docked == "carrier"):
+                if (toBuy <= 0):
+                    continue
                 
-            #if i['need']-i['carrier'] <= 0:
-            #    continue
             if (row >= self.ROWS):
                 break
 
