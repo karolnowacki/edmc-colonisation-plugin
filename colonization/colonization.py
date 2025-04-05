@@ -238,9 +238,10 @@ class ColonizationPlugin:
 
     def setDocked(self, state):
         self.currentMarketId=state['MarketID']
-        if state['StationType'] == "PlanetaryConstructionDepot" or state['StationType'] == "SpaceConstructionDepot":
+        isColonisationShip = state['StationType'] == "SurfaceStation" and "ColonisationShip" in state['StationName']
+        if state['StationType'] == "PlanetaryConstructionDepot" or state['StationType'] == "SpaceConstructionDepot" or isColonisationShip:
             self.dockedConstruction = {
-                'StationName': state['StationName'],
+                'StationName': "System Colonisation Ship" if isColonisationShip else state['StationName'],
                 'SystemName': state['SystemName'],
                 'MarketID': state['MarketID'],
             }
