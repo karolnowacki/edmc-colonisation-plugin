@@ -1,10 +1,10 @@
 import csv
 import json
+import re
 from os import path
 
 from . import construction
-from .construction import Construction
-from .requirements import requirements
+from .construction import Construction,ConstructionResource
 from .fleetcarrier import FleetCarrier
 from ui import MainUi
 
@@ -24,9 +24,9 @@ class ColonizationPlugin:
         self.currentConstructionId:int = -1
         self.pluginDir:str = None
         self.ui:MainUi = None
-        self.dockedConstruction = None
+        self.dockedConstruction = False
         self.markets = {}
-        self.currentMarketId:int = None
+        self.currentMarketId = None
         logger.debug("initialized")
 
     def plugin_start3(self, plugin_dir:str):
@@ -64,29 +64,49 @@ class ColonizationPlugin:
                     self.removeCargo(t['Type'], t['Count'])
                     self.carrier.addCargo(t['Type'], t['Count'])
             self.updateDisplay()
+            
+        if entry['event'] == "ColonisationContribution":
+            delivery = {}
+            for c in entry['Contributions']:
+                delivery[self.commodityFromName(c['Name'])] = c['Amount']
+            self.colonisationContribution(entry['MarketID'], delivery)
+            self.updateDisplay()
+            self.save()
+            
+        if entry['event'] == "ColonisationConstructionDepot":
+            required={}
+            for r in entry['ResourcesRequired']:
+                required[self.commodityFromName(r['Name'])] = ConstructionResource(
+                    commodity=self.commodityFromName(r['Name']), 
+                    required=r['RequiredAmount'],
+                    provided=r['ProvidedAmount'],
+                    payment=r['Payment'])
+            self.colonisationConstructionDepot(
+                systemName=state['SystemName'],
+                stationName=state['StationName'],
+                marketId=entry['MarketID'],
+                constructionProgress=entry['ConstructionProgress'],
+                constructionComplete=entry['ConstructionComplete'], 
+                constructionFailed=entry['ConstructionFailed'], 
+                required=required)
+            self.updateDisplay()
+            self.save()
 
         if entry['event'] == "Cargo":
-            cargo = state['Cargo'].copy()
-            if state['StationType'] == "PlanetaryConstructionDepot" or state['StationType'] == "SpaceConstructionDepot":
-                for commodity, qty in self.cargo.items():
-                    inCargo = cargo.get(commodity, 0)
-                    if qty > inCargo and self.currentConstruction:
-                        self.currentConstruction.deliver(commodity, qty-inCargo)
-            self.cargo = cargo
+            self.cargo = state['Cargo'].copy()
             self.updateDisplay()
             self.save()
 
         if entry['event'] == 'StartUp':
             self.cargo = state['Cargo'].copy()
-            self.currentMarketId = state['MarketID']
             self.setDocked(state)
 
         if entry['event'] == 'Docked':
             self.setDocked(state)
 
         if entry['event'] == "Undocked":
+            self.dockedConstruction = False
             self.currentMarketId = None
-            self.dockedConstruction = None
             self.updateDisplay()
             
     def capi_fleetcarrier(self, data):
@@ -96,30 +116,30 @@ class ColonizationPlugin:
     def updateDisplay(self, event=None):
         if self.ui:
             if self.currentConstruction:
-                self.ui.setTitle(self.currentConstruction.name)
-                if self.currentConstruction.marketId:
-                    if (self.dockedConstruction and self.currentConstruction and self.dockedConstruction.get('MarketID', 0) == self.currentConstruction.marketId):
-                        self.ui.setStation("{} (docked)".format(self.currentConstruction.stationName), 'green')
-                    else:
-                        self.ui.setStation(self.currentConstruction.stationName)
+                self.ui.setTitle(self.currentConstruction.getShortName())
+                if (self.currentConstructionId == None):
+                    self.ui.setStation("This construction is not tracked", color="#f00")
+                elif (self.dockedConstruction):
+                    self.ui.setStation("{} (docked)".format(self.currentConstruction.stationName), 'green')
                 else:
-                    self.ui.setStation("STATION IS NOT BIND", color="#f00")
+                    self.ui.setStation(self.currentConstruction.stationName)
             else:
-                self.ui.setTitle("Total")
+                self.ui.setTitle("TOTAL")
                 self.ui.setStation("")
+                
             dockedTo = False
-            if self.dockedConstruction and self.currentConstruction and self.dockedConstruction.get('MarketID', 0) == self.currentConstruction.marketId:
-                dockedTo = "market"
+            if self.dockedConstruction:
+                dockedTo = "construction"
             if self.carrier.callSign and monitor.state['StationName'] == self.carrier.callSign:
                 dockedTo = "carrier"
             self.ui.setTable(self.getTable(), dockedTo)
-            if self.ui.bind_btn:
-                if self.currentConstruction and self.dockedConstruction and self.currentConstruction.marketId == None:
-                    self.ui.bind_btn.grid()
+            if self.ui.track_btn:
+                if self.dockedConstruction and self.currentConstructionId == None:
+                    self.ui.track_btn.grid()
                 else:
-                    self.ui.bind_btn.grid_remove()
+                    self.ui.track_btn.grid_remove()
             if self.ui.prev_btn and self.ui.next_btn:
-                if self.dockedConstruction and self.currentConstruction and self.dockedConstruction.get('MarketID', 0) == self.currentConstruction.marketId:
+                if self.dockedConstruction:
                     self.ui.prev_btn.grid_remove()
                     self.ui.next_btn.grid_remove()
                 else:
@@ -128,13 +148,13 @@ class ColonizationPlugin:
                     
 
     def getTable(self):
-        needed = self.currentConstruction.needed if self.currentConstruction else self.getTotalShoppingList()
+        needed = self.currentConstruction.required if self.currentConstruction else self.getTotalShoppingList()
         table = []
         localCommodities = self.markets.get(self.currentMarketId, []) if self.currentMarketId else []
-        for commodity, qty in needed.items():
+        for commodity, required in needed.items():
             table.append({
                 'commodityName': self.commodityMap.get(commodity, commodity),
-                'needed': qty,
+                'needed': required.needed() if isinstance(required, ConstructionResource) else required,
                 'cargo': self.cargo.get(commodity, 0),
                 'carrier': self.carrier.getCargo(commodity),
                 'available': commodity in localCommodities
@@ -157,22 +177,15 @@ class ColonizationPlugin:
         filePath = path.join(self.pluginDir, "constructions.json")
         if path.isfile(filePath):
             for c in json.load(open(filePath, 'r', encoding='utf-8')):
+                if ("needed" in c):
+                    # skip old version
+                    continue;
                 self.constructions.append(Construction(**c))
         self.carrier.load(path.join(self.pluginDir, "fccargo.json"))   
             
     def save(self):
         with open(path.join(self.pluginDir, "constructions.json"), 'w', encoding='utf-8') as file:
             json.dump(self.constructions, file, ensure_ascii=False, indent=4, cls=construction.ConstructionEncoder)
-        #self.carrier.save(path.join(self.pluginDir, "fccargo.json"))
-        
-        
-    def addConstruction(self, name:str, type:str|None=None) -> Construction:
-        logger.info("Adding construction %s %s", name, type)
-        construction = Construction(name, requirements.get(type).get('needed', {}))
-        self.constructions.append(construction)
-        self.updateDisplay()
-        self.save()
-        return construction
     
     def getShoppingList(self, marketId:int|None=None) -> dict[str, int]:
         if marketId == None:
@@ -182,11 +195,11 @@ class ColonizationPlugin:
     def getTotalShoppingList(self) -> dict[str, int]:
         ret = {}
         for i in self.constructions:
-            for commodity,qty in i.needed.items():
+            for commodity,req in i.required.items():
                 if commodity in ret:
-                    ret[commodity] += qty
+                    ret[commodity] += req.needed()
                 else:
-                    ret[commodity] = qty
+                    ret[commodity] = req.needed()
         return dict(sorted(ret.items()))
 
     def addCargo(self, commodity:str, qty:int) -> int:
@@ -207,12 +220,12 @@ class ColonizationPlugin:
         self.ui = ui
         ui.on('prev', self.prevConstruction)
         ui.on('next', self.nextConstruction)
-        ui.on('bind', self.bindStation)
+        ui.on('track', self.trackStation)
         ui.on('update', self.updateDisplay)
         self.updateDisplay()
 
     def prevConstruction(self, event):
-        if self.dockedConstruction and self.currentConstruction and self.dockedConstruction['MarketID'] == self.currentConstruction.marketId:
+        if self.dockedConstruction:
             return
         if self.currentConstructionId < 0:
             self.currentConstructionId = len(self.constructions)-1
@@ -226,7 +239,7 @@ class ColonizationPlugin:
         self.updateDisplay()
 
     def nextConstruction(self, event):
-        if self.dockedConstruction and self.currentConstruction and self.dockedConstruction['MarketID'] == self.currentConstruction.marketId:
+        if self.dockedConstruction:
             return
         self.currentConstructionId += 1
         if (self.currentConstructionId >= len(self.constructions)):
@@ -237,34 +250,41 @@ class ColonizationPlugin:
         self.updateDisplay()
 
     def setDocked(self, state):
-        self.currentMarketId=state['MarketID']
-        isColonisationShip = state['StationType'] == "SurfaceStation" and "ColonisationShip" in state['StationName']
-        if state['StationType'] == "PlanetaryConstructionDepot" or state['StationType'] == "SpaceConstructionDepot" or isColonisationShip:
-            self.dockedConstruction = {
-                'StationName': "System Colonisation Ship" if isColonisationShip else state['StationName'],
-                'SystemName': state['SystemName'],
-                'MarketID': state['MarketID'],
-            }
-            found = next((c for c in self.constructions if c.marketId == state['MarketID']), None)
-            if found:
-                self.currentConstructionId = self.constructions.index(found)
-                self.currentConstruction = found
+        self.currentMarketId = state['MarketID']
+        found = next((c for c in self.constructions if c.marketId == state['MarketID']), None)
+        if found:
+            self.currentConstructionId = self.constructions.index(found)
+            self.currentConstruction = found
         self.updateDisplay()
+        
+    def colonisationConstructionDepot(self, systemName, stationName, marketId, constructionProgress, constructionComplete, constructionFailed, required):
+        found = next((c for c in self.constructions if c.marketId == marketId), None)
+        self.dockedConstruction = True
+        if found:
+            self.currentConstructionId = self.constructions.index(found)
+            self.currentConstruction = found
+            found.constructionProgress = constructionProgress
+            found.constructionComplete = constructionComplete
+            found.constructionFailed = constructionFailed
+            found.required = required
+        else:
+            self.currentConstructionId = None
+            self.currentConstruction = Construction(system=systemName, stationName=stationName, marketId=marketId, constructionProgress=constructionProgress, 
+                                                    constructionComplete=constructionComplete, constructionFailed=constructionFailed, required=required)
+        self.updateDisplay()
+        
+    def colonisationContribution(self, marketId, delivery):
+        found = next((c for c in self.constructions if c.marketId == marketId), None)
+        if not found and self.currentConstruction.marketId == marketId:
+            found = self.currentConstruction
+        if found:
+            for commodity,qty in delivery.items():
+                found.deliver(commodity, qty)
 
-    def bindStation(self, event):
-        if self.dockedConstruction and self.currentConstruction and self.currentConstruction.marketId == None:
-            self.currentConstruction.setStation(stationName=self.dockedConstruction['StationName'], 
-                                                system=self.dockedConstruction['SystemName'],
-                                                marketId=self.dockedConstruction['MarketID'])
-        self.updateDisplay()
-        self.save()
-    
-    def unbindStation(self, marketId):
-        construction = next(i for i in self.constructions if i.marketId == marketId)
-        if construction:
-            construction.marketId = None
-            construction.system = None
-            construction.stationName = None
+    def trackStation(self, event):
+        if self.dockedConstruction and self.currentConstructionId == None:
+            self.constructions.append(self.currentConstruction)
+            self.currentConstructionId = len(self.constructions)-1
         self.updateDisplay()
         self.save()
             
@@ -275,4 +295,10 @@ class ColonizationPlugin:
             self.currentConstruction = None
         self.updateDisplay()
         self.save()
+        
+    def commodityFromName(self, name):
+        m = re.search('^\\$(.*)_', name)
+        if not m:
+            return name
+        return m.group(1).lower()
         

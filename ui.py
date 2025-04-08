@@ -23,7 +23,7 @@ class MainUi:
         self.config = config
         self.title = None
         self.station = None
-        self.bind_btn = None
+        self.track_btn = None
         self.prev_btn = None
         self.next_btn = None
         self.view_btn = None
@@ -61,8 +61,8 @@ class MainUi:
         self.station = tk.Label(frame, text="Station", justify=tk.CENTER)
         self.station.grid(row=1, column=0, columnspan=5, sticky=tk.EW)
         
-        self.bind_btn = tk.Button(frame, text="Bind this construction with docked station", command=partial(self.event, "bind", None))
-        self.bind_btn.grid(row=2, column=0, sticky=tk.EW, columnspan=5)
+        self.track_btn = tk.Button(frame, text="Track this construction", command=partial(self.event, "track", None))
+        self.track_btn.grid(row=2, column=0, sticky=tk.EW, columnspan=5)
 
         self.table_frame = tk.Frame(self.frame, highlightthickness=1)
         self.table_frame.columnconfigure(0, weight=1)
@@ -96,7 +96,6 @@ class MainUi:
         self.subscribers[event] = function
         
     def changeView(self, event):
-        print("ViewChanged", self.view_mode)
         if (self.view_mode == ViewMode.FULL):
             self.view_btn['image'] = self.icons['view_open']
             self.view_mode = ViewMode.FILTERED
