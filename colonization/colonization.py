@@ -20,7 +20,7 @@ class ColonizationPlugin:
         self.constructions:list[Construction] = []
         self.carrier:FleetCarrier = FleetCarrier()
         self.cargo:dict[str,int] = {}
-        self.maxcargo: int = 0        
+        self.maxcargo: int = 0
         self.currentConstruction:Construction|None = None
         self.currentConstructionId:int = -1
         self.pluginDir:str = None
@@ -65,10 +65,10 @@ class ColonizationPlugin:
                     self.removeCargo(t['Type'], t['Count'])
                     self.carrier.addCargo(t['Type'], t['Count'])
             self.updateDisplay()
-        
+
         if entry['event'] == "Loadout" and entry["Ship"] and entry["CargoCapacity"]:
             self.maxcargo = int(entry["CargoCapacity"])
-       
+
         if entry['event'] == "ColonisationContribution":
             delivery = {}
             for c in entry['Contributions']:
@@ -123,8 +123,15 @@ class ColonizationPlugin:
         if self.ui:
             if self.currentConstruction:
                 self.ui.setTitle(self.currentConstruction.getShortName())
+                if (self.currentConstructionId == None):
+                    self.ui.setStation("This construction is not tracked", color="#f00")
+                elif (self.dockedConstruction):
+                    self.ui.setStation("{} (docked)".format(self.currentConstruction.getName()), 'green')
+                else:
+                    self.ui.setStation(self.currentConstruction.getName())
             else:
                 self.ui.setTitle("TOTAL")
+                self.ui.setStation("")
             self.ui.setTotal(self.getTotalShoppingValue(), self.maxcargo)
             dockedTo = False
             if self.dockedConstruction:
@@ -161,14 +168,14 @@ class ColonizationPlugin:
                 'available': commodity in localCommodities
             })
         return table
-    
+
     def getTotalShoppingValue(self):
         needed = self.currentConstruction.required if self.currentConstruction else self.getTotalShoppingList()
         value = 0
         for commodity, required in needed.items():
             value += required.needed() if isinstance(required, ConstructionResource) else required
         return value
-    
+
     def getCommodityMap(self):
         map = {}
         for f in ('commodity.csv', 'rare_commodity.csv'):
