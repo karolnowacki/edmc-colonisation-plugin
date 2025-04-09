@@ -120,9 +120,9 @@ class ColonizationPlugin:
                 if (self.currentConstructionId == None):
                     self.ui.setStation("This construction is not tracked", color="#f00")
                 elif (self.dockedConstruction):
-                    self.ui.setStation("{} (docked)".format(self.currentConstruction.stationName), 'green')
+                    self.ui.setStation("{} (docked)".format(self.currentConstruction.getName()), 'green')
                 else:
-                    self.ui.setStation(self.currentConstruction.stationName)
+                    self.ui.setStation(self.currentConstruction.getName())
             else:
                 self.ui.setTitle("TOTAL")
                 self.ui.setStation("")

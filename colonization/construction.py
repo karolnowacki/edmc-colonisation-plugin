@@ -35,6 +35,14 @@ class Construction:
         self.stationName = stationName
         self.marketId = marketId
     def getShortName(self):
+        if self.stationName.startswith("$EXT_PANEL_ColonisationShip"):
+            return self.system
+        if "Construction Site: " in self.stationName:
+            return self.stationName.split(": ")[1]
+        return self.stationName
+    def getName(self):
+        if self.stationName.startswith("$EXT_PANEL_ColonisationShip"):
+            return "System Colonisation Ship"
         return self.stationName
             
         

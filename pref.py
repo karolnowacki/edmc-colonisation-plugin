@@ -8,6 +8,9 @@ from colonization.colonization import ColonizationPlugin
 from colonization.construction import Construction
 
 class PreferencesUi:
+    
+    PADX=10
+    PADY=10
 
     def __init__(self, config, plugin:ColonizationPlugin):
         self.config = config
@@ -21,7 +24,7 @@ class PreferencesUi:
         self.frame.grid(sticky=tk.EW)
 
         frame = nb.Frame(self.frame)
-        frame.grid(row=self.row, sticky=tk.EW)
+        frame.grid(row=self.row, sticky=tk.EW, padx=self.PADX, pady=self.PADY)
         nb.Label(frame, text="Fleet carrier call sign:").grid(row=0, column=0)
         self.FCcallsign = nb.Label(frame, text=self.plugin.carrier.callSign)
         self.FCcallsign.grid(row=0, column=1)
@@ -29,11 +32,14 @@ class PreferencesUi:
         self.FClastupdate = nb.Label(frame, text=self.plugin.carrier.lastSync)
         self.FClastupdate.grid(row=1, column=1)
         btn = nb.Button(frame, text="Load FC data", command=partial(self.event, 'forceFCload', None))
-        btn.grid(row=3, columnspan = 2, sticky=tk.EW)
+        btn.grid(row=3, columnspan = 2, sticky=tk.EW, pady=5)
+        self.nextRow()
+        
+        ttk.Separator(self.frame, orient=tk.HORIZONTAL).grid(row=self.row, sticky=tk.EW, padx=self.PADX)
         self.nextRow()
         
         self.constructionList = nb.Frame(self.frame)
-        self.constructionList.grid(row=self.row, column=0, sticky=tk.EW)
+        self.constructionList.grid(row=self.row, column=0, sticky=tk.EW, padx=self.PADX, pady=self.PADY)
         self.buildConstructionList()
         self.nextRow()
         
@@ -45,11 +51,12 @@ class PreferencesUi:
             
         row=0
         
-        nb.Label(self.constructionList, text="Bind Construction Site").grid(row=row, column=0)
+        nb.Label(self.constructionList, text="List of tracked construction sites").grid(row=row, column=0, columnspan=2)
         row+=1
         for c in self.plugin.constructions:
-            nb.Label(self.constructionList, text=c.stationName).grid(row=row, column=0, sticky=tk.W)
-            ttk.Button(self.constructionList, text="Remove from tracking", command=partial(self.removeConstruction, c)).grid(row=row, column=1)
+            nb.Label(self.constructionList, text=c.system).grid(row=row, column=0, sticky=tk.W)
+            nb.Label(self.constructionList, text=c.getName()).grid(row=row, column=1, sticky=tk.W)
+            ttk.Button(self.constructionList, text="Remove from tracking", command=partial(self.removeConstruction, c)).grid(row=row, column=2, pady=2, padx=5)
             row+=1
         
             
