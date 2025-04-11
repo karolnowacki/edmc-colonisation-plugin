@@ -25,6 +25,7 @@ class Construction:
         if start != -1:
             end = stationName.find(":", start)
             stationNameClean = stationName[start:end] if end != -1 else stationName[start:]
+            stationNameClean = f"{stationNameClean} {system}"
         else:
             stationNameClean = stationName
 
