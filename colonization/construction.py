@@ -21,8 +21,14 @@ class Construction:
         self.constructionComplete = constructionComplete
         self.constructionFailed = constructionFailed
         
+        start = stationName.find("ColonisationShip")
+        if start != -1:
+            stationNameClean = f"ColonisationShip {system}"
+        else:
+            stationNameClean = stationName
+
         self.system:str = system
-        self.stationName:str = stationName
+        self.stationName:str = stationNameClean
         self.marketId:int = marketId
 
     def deliver(self, commodity:str, quantity:int):
