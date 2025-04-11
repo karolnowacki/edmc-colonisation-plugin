@@ -41,7 +41,7 @@ class MainUi:
         frame.columnconfigure(2, weight=1)
         frame.grid(row=0, column=0, sticky=tk.EW)
 
-        tk.Label(frame, text="Colonization:", anchor=tk.W).grid(row=0, column=0, sticky=tk.W)
+        tk.Label(frame, text="", anchor=tk.W).grid(row=0, column=0, sticky=tk.W)
         
         self.prev_btn = tk.Label(frame, image=self.icons['left_arrow'], cursor="hand2")
         self.prev_btn.bind("<Button-1>", partial(self.event, "prev"))
@@ -66,23 +66,26 @@ class MainUi:
 
         self.table_frame = tk.Frame(self.frame, highlightthickness=1)
         self.table_frame.columnconfigure(0, weight=1)
-        self.table_frame.grid(row=1, column=0, sticky=tk.EW)
+        self.table_frame.grid(row=1, column=0, sticky=tk.W)
 
-        tk.Label(self.table_frame, text="Commodity").grid(row=0, column=0)
-        tk.Label(self.table_frame, text="Need").grid(row=0, column=1)
-        tk.Label(self.table_frame, text="Cargo").grid(row=0, column=2)
-        tk.Label(self.table_frame, text="FleetCarrier").grid(row=0, column=3)
+        tk.Label(self.table_frame, text="Commodity").grid(row=0, column=0, sticky="w")
+        tk.Label(self.table_frame, text="Buy /").grid(row=0, column=1, sticky="e")
+        #tk.Label(self.table_frame, text="/ Storage").grid(row=0, column=2, sticky="w")
+        tk.Label(self.table_frame, text=" Cargo ").grid(row=0, column=2, sticky="e")
+        tk.Label(self.table_frame, text="/ FleetCarrier").grid(row=0, column=3, sticky="w")
 
         self.rows = list()
         for i in range(self.ROWS):
             labels = {}
-            labels['name'] = tk.Label(self.table_frame)
+            labels['name'] = tk.Label(self.table_frame,anchor="w")
             labels['name'].grid_remove()
-            labels['needed'] = tk.Label(self.table_frame)
+            labels['needed'] = tk.Label(self.table_frame,anchor="e")
             labels['needed'].grid_remove()
-            labels['cargo'] = tk.Label(self.table_frame)
+            #labels['storage'] = tk.Label(self.table_frame,anchor="w")
+            #labels['storage'].grid_remove()
+            labels['cargo'] = tk.Label(self.table_frame,anchor="e")
             labels['cargo'].grid_remove()
-            labels['carrier'] = tk.Label(self.table_frame)
+            labels['carrier'] = tk.Label(self.table_frame,anchor="w")
             labels['carrier'].grid_remove()
             self.rows.append(labels)
 
@@ -117,7 +120,8 @@ class MainUi:
             if i['needed'] <= 0:
                 continue
             
-            toBuy = i['needed']-i['cargo']-i['carrier']
+            toBuy = max(0,i['needed']-i['cargo']-i['carrier'])
+            storage = max(0,i['cargo']+i['carrier'])
             
             if (self.view_mode == ViewMode.FILTERED and not docked):
                 if (not i['available']):
@@ -131,22 +135,25 @@ class MainUi:
             if (row >= self.ROWS):
                 break
 
+            #self.rows[row]['storage']['text'] = "/ {}".format(storage)
             self.rows[row]['name']['text'] = i['commodityName']            
             if (i['cargo'] > 0 or i['carrier'] > 0):
-                self.rows[row]['needed']['text'] = "{} ({})".format(i['needed'], toBuy)
+                self.rows[row]['needed']['text'] = "{} /".format(toBuy)
             else:
-                self.rows[row]['needed']['text'] = i['needed']
-            self.rows[row]['cargo']['text'] = i['cargo']
-            self.rows[row]['carrier']['text'] = i['carrier']
+                self.rows[row]['needed']['text'] = "{} /".format(i['needed'])
+            self.rows[row]['cargo']['text'] = "{} ".format(i['cargo'])
+            self.rows[row]['carrier']['text'] = "/ {}".format(i['carrier'])
 
-            self.rows[row]['name'].grid(row=row+1, column=0)
-            self.rows[row]['needed'].grid(row=row+1, column=1)
-            self.rows[row]['cargo'].grid(row=row+1, column=2)
-            self.rows[row]['carrier'].grid(row=row+1, column=3)
+            self.rows[row]['name'].grid(row=row+1, column=0, sticky="w")
+            self.rows[row]['needed'].grid(row=row+1, column=1, sticky="e")
+            #self.rows[row]['storage'].grid(row=row+1, column=2, sticky="w")
+            self.rows[row]['cargo'].grid(row=row+1, column=2, sticky="e")
+            self.rows[row]['carrier'].grid(row=row+1, column=3, sticky="w")
             
             if (toBuy <= 0):
                 self.rows[row]['name']['fg'] = 'green'
                 self.rows[row]['needed']['fg'] = 'green'
+                #self.rows[row]['storage']['fg'] = 'green'
                 self.rows[row]['cargo']['fg'] = 'green'
                 self.rows[row]['carrier']['fg'] = 'green'
             else:
@@ -155,6 +162,7 @@ class MainUi:
                 else:
                     self.rows[row]['name']['fg'] = self.config.get_str('dark_text')
                 self.rows[row]['needed']['fg'] = self.config.get_str('dark_text')
+                #self.rows[row]['storage']['fg'] = self.config.get_str('dark_text')
                 self.rows[row]['cargo']['fg'] = self.config.get_str('dark_text')
                 self.rows[row]['carrier']['fg'] = self.config.get_str('dark_text')
             row+=1
@@ -162,6 +170,7 @@ class MainUi:
         for i in range(row, self.ROWS):
             self.rows[i]['name'].grid_remove()
             self.rows[i]['needed'].grid_remove()
+            #self.rows[i]['storage'].grid_remove()
             self.rows[i]['cargo'].grid_remove()
             self.rows[i]['carrier'].grid_remove()
         
