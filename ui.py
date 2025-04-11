@@ -69,10 +69,10 @@ class MainUi:
         self.table_frame.grid(row=1, column=0, sticky=tk.W)
 
         tk.Label(self.table_frame, text="Commodity |").grid(row=0, column=0, sticky="w")
-        tk.Label(self.table_frame, text="Demand |").grid(row=0, column=1, sticky="e")
-        tk.Label(self.table_frame, text="Buy |").grid(row=0, column=2, sticky="e")
-        tk.Label(self.table_frame, text="Cargo |").grid(row=0, column=3, sticky="e")
-        tk.Label(self.table_frame, text="Carrier").grid(row=0, column=4, sticky="w")
+        tk.Label(self.table_frame, text="Demand |").grid(row=0, column=2, sticky="e")
+        tk.Label(self.table_frame, text="Buy |").grid(row=0, column=1, sticky="e")
+        tk.Label(self.table_frame, text="Cargo |").grid(row=0, column=4, sticky="e")
+        tk.Label(self.table_frame, text="Carrier").grid(row=0, column=3, sticky="w")
 
         self.rows = list()
         for i in range(self.ROWS):
@@ -145,10 +145,10 @@ class MainUi:
             self.rows[row]['carrier']['text'] = "{}".format(i['carrier'])
 
             self.rows[row]['name'].grid(row=row+1, column=0, sticky="w")
-            self.rows[row]['demand'].grid(row=row+1, column=1, sticky="e")
-            self.rows[row]['needed'].grid(row=row+1, column=2, sticky="e")
-            self.rows[row]['cargo'].grid(row=row+1, column=3, sticky="e")
-            self.rows[row]['carrier'].grid(row=row+1, column=4, sticky="e")
+            self.rows[row]['demand'].grid(row=row+1, column=2, sticky="e")
+            self.rows[row]['needed'].grid(row=row+1, column=1, sticky="e")
+            self.rows[row]['cargo'].grid(row=row+1, column=4, sticky="e")
+            self.rows[row]['carrier'].grid(row=row+1, column=3, sticky="e")
             
             if (toBuy <= 0):
                 self.rows[row]['name']['fg'] = 'green'
