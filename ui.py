@@ -68,7 +68,7 @@ class MainUi:
         self.table_frame.columnconfigure(0, weight=1)
         self.table_frame.grid(row=1, column=0, sticky=tk.W)
 
-        tk.Label(self.table_frame, text="Commodity |").grid(row=0, column=0, sticky="w")
+        tk.Label(self.table_frame, text="Commodity").grid(row=0, column=0, sticky="w")
         tk.Label(self.table_frame, text="Demand |").grid(row=0, column=2, sticky="e")
         tk.Label(self.table_frame, text="Buy |").grid(row=0, column=1, sticky="e")
         tk.Label(self.table_frame, text="Cargo").grid(row=0, column=4, sticky="e")
