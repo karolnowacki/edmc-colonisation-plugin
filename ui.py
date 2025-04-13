@@ -23,6 +23,7 @@ class MainUi:
         self.config = config
         self.title = None
         self.station = None
+        self.total_label = None
         self.track_btn = None
         self.prev_btn = None
         self.next_btn = None
@@ -58,15 +59,15 @@ class MainUi:
         self.view_btn.bind("<Button-1>", self.changeView)
         self.view_btn.grid(row=0, column=4, sticky=tk.E)
 
-        self.station = tk.Label(frame, text="Station", justify=tk.CENTER)
-        self.station.grid(row=1, column=0, columnspan=5, sticky=tk.EW)
+        #self.station = tk.Label(frame, text="Station", justify=tk.CENTER)
+        #self.station.grid(row=1, column=0, columnspan=5, sticky=tk.EW)
         
         self.track_btn = tk.Button(frame, text="Track this construction", command=partial(self.event, "track", None))
         self.track_btn.grid(row=2, column=0, sticky=tk.EW, columnspan=5)
 
         self.table_frame = tk.Frame(self.frame, highlightthickness=1)
         self.table_frame.columnconfigure(0, weight=1)
-        self.table_frame.grid(row=1, column=0, sticky=tk.W)
+        self.table_frame.grid(row=1, column=0, sticky=tk.W, columnspan=5)
 
         tk.Label(self.table_frame, text="Commodity").grid(row=0, column=0, sticky="w")
         tk.Label(self.table_frame, text="Demand |").grid(row=0, column=2, sticky="e")
@@ -88,6 +89,9 @@ class MainUi:
             labels['carrier'] = tk.Label(self.table_frame,anchor="e")
             labels['carrier'].grid_remove()
             self.rows.append(labels)
+
+        self.total_label = tk.Label(frame, text="0 t to deliever", justify=tk.CENTER)
+        self.total_label.grid(row=2, column=0, columnspan=5, sticky=tk.EW)
 
         return self.frame
     
@@ -179,12 +183,15 @@ class MainUi:
             self.table_frame.grid_remove()
         else:
             self.table_frame.grid()
-        
-
-    def setStation(self, station, color=None):
-        if self.station:
-            self.station['text'] = str(station)
+    
+    def setTotal(self, cargo, maxcargo,color=None):
+        if maxcargo > 0:
+            flight = float(cargo)/float(maxcargo)
+        else:
+            flight = 0.0
+        if self.total_label:
+            self.total_label['text'] = f"Remaining {flight:.1f} flights at {maxcargo} tons each, total {str(cargo)} t"
             if color:
-                self.station['fg'] = color
+                self.total_label['fg'] = color
             else:
-                self.station['fg'] = self.config.get_str('dark_text')
+                self.total_label['fg'] = self.config.get_str('dark_text')

@@ -20,6 +20,7 @@ class ColonizationPlugin:
         self.constructions:list[Construction] = []
         self.carrier:FleetCarrier = FleetCarrier()
         self.cargo:dict[str,int] = {}
+        self.maxcargo: int = 0        
         self.currentConstruction:Construction|None = None
         self.currentConstructionId:int = -1
         self.pluginDir:str = None
@@ -64,7 +65,10 @@ class ColonizationPlugin:
                     self.removeCargo(t['Type'], t['Count'])
                     self.carrier.addCargo(t['Type'], t['Count'])
             self.updateDisplay()
-            
+        
+        if entry['event'] == "Loadout" and entry["Ship"] and entry["CargoCapacity"]:
+            self.maxcargo = int(entry["CargoCapacity"])
+       
         if entry['event'] == "ColonisationContribution":
             delivery = {}
             for c in entry['Contributions']:
@@ -94,11 +98,13 @@ class ColonizationPlugin:
 
         if entry['event'] == "Cargo":
             self.cargo = state['Cargo'].copy()
+            self.maxcargo = max(int(entry.get("Count",0)),self.maxcargo)
             self.updateDisplay()
             self.save()
 
         if entry['event'] == 'StartUp':
             self.cargo = state['Cargo'].copy()
+            self.maxcargo = max(int(entry.get("Count",0)),self.maxcargo)
             self.setDocked(state)
 
         if entry['event'] == 'Docked':
@@ -117,16 +123,9 @@ class ColonizationPlugin:
         if self.ui:
             if self.currentConstruction:
                 self.ui.setTitle(self.currentConstruction.getShortName())
-                if (self.currentConstructionId == None):
-                    self.ui.setStation("This construction is not tracked", color="#f00")
-                elif (self.dockedConstruction):
-                    self.ui.setStation("{} (docked)".format(self.currentConstruction.stationName), 'green')
-                else:
-                    self.ui.setStation(self.currentConstruction.stationName)
             else:
                 self.ui.setTitle("TOTAL")
-                self.ui.setStation("")
-                
+            self.ui.setTotal(self.getTotalShoppingValue(), self.maxcargo)
             dockedTo = False
             if self.dockedConstruction:
                 dockedTo = "construction"
@@ -136,8 +135,10 @@ class ColonizationPlugin:
             if self.ui.track_btn:
                 if self.dockedConstruction and self.currentConstructionId == None:
                     self.ui.track_btn.grid()
+                    self.ui.total_label.grid_remove()
                 else:
                     self.ui.track_btn.grid_remove()
+                    self.ui.total_label.grid()
             if self.ui.prev_btn and self.ui.next_btn:
                 if self.dockedConstruction:
                     self.ui.prev_btn.grid_remove()
@@ -160,7 +161,14 @@ class ColonizationPlugin:
                 'available': commodity in localCommodities
             })
         return table
-
+    
+    def getTotalShoppingValue(self):
+        needed = self.currentConstruction.required if self.currentConstruction else self.getTotalShoppingList()
+        value = 0
+        for commodity, required in needed.items():
+            value += required.needed() if isinstance(required, ConstructionResource) else required
+        return value
+    
     def getCommodityMap(self):
         map = {}
         for f in ('commodity.csv', 'rare_commodity.csv'):
