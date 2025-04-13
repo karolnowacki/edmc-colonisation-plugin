@@ -1,7 +1,10 @@
 import json
-
+import l10n
+import functools
 from EDMCLogging import get_main_logger
 logger = get_main_logger()
+
+ptl = functools.partial(l10n.translations.tl, context=__file__)
 
 class ConstructionResource:
     def __init__(self, commodity, required, provided, payment):
@@ -34,10 +37,28 @@ class Construction:
         self.system = system
         self.stationName = stationName
         self.marketId = marketId
+
     def getShortName(self):
+        if self.stationName:
+            if self.stationName.startswith("$EXT_PANEL_ColonisationShip:"):
+                return ptl("$EXT_PANEL_ColonisationShip")
+            if self.stationName.startswith("Planetary Construction Site:"):
+                return self.stationName[28:].strip()
+            if self.stationName.startswith("Orbital Construction Site:"):
+                return self.stationName[26:].strip()
         return self.stationName
-            
-        
+
+    def getSiteName(self):
+        if self.stationName:
+            if self.stationName.startswith("$EXT_PANEL_ColonisationShip:"):
+                return ptl("$EXT_PANEL_ColonisationShip")+" "+self.system
+            if self.stationName.startswith("Planetary Construction Site:"):
+                return ptl("Planetary Construction Site")+": "+self.system
+            if self.stationName.startswith("Orbital Construction Site:"):
+                return ptl("Orbital Construction Site")+": "+self.system
+        return self.stationName
+
+
 class ConstructionEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, Construction):

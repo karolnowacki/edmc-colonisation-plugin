@@ -1,22 +1,26 @@
 import csv
 import json
 import re
+import l10n
+import functools
 from os import path
 
 from . import construction
 from .construction import Construction,ConstructionResource
 from .fleetcarrier import FleetCarrier
-from ui import MainUi
+from ui import MainUi, Commodity
 
 from EDMCLogging import get_main_logger
 from monitor import monitor
 logger = get_main_logger()
 
+ptl = functools.partial(l10n.translations.tl, context=__file__)
+
 class ColonizationPlugin:
 
     def __init__(self, config):
         self.config = config
-        self.commodityMap:dict[str,str] = self.getCommodityMap()
+        self.commodityMap:dict[str,Commodity] = {}
         self.constructions:list[Construction] = []
         self.carrier:FleetCarrier = FleetCarrier()
         self.cargo:dict[str,int] = {}
@@ -31,6 +35,8 @@ class ColonizationPlugin:
 
     def plugin_start3(self, plugin_dir:str):
         self.pluginDir = plugin_dir
+        self._loadCommodityMap()
+        self._loadCommoditySorting()
         self.load()
 
     def cmdr_data(self, data, is_beta: bool):
@@ -115,24 +121,27 @@ class ColonizationPlugin:
         
     def updateDisplay(self, event=None):
         if self.ui:
+            isTotal = False
             if self.currentConstruction:
-                self.ui.setTitle(self.currentConstruction.getShortName())
+                self.ui.setTitle(self.currentConstruction.getSiteName())
+                shortName = self.currentConstruction.getShortName()
                 if (self.currentConstructionId == None):
-                    self.ui.setStation("This construction is not tracked", color="#f00")
+                    self.ui.setStation(ptl("{} (not tracked)").format(shortName), color="#f00")
                 elif (self.dockedConstruction):
-                    self.ui.setStation("{} (docked)".format(self.currentConstruction.stationName), 'green')
+                    self.ui.setStation(ptl("{} (docked)").format(shortName), 'green')
                 else:
-                    self.ui.setStation(self.currentConstruction.stationName)
+                    self.ui.setStation(shortName)
             else:
-                self.ui.setTitle("TOTAL")
+                self.ui.setTitle(ptl("Total"))
                 self.ui.setStation("")
+                isTotal = True
                 
             dockedTo = False
             if self.dockedConstruction:
                 dockedTo = "construction"
             if self.carrier.callSign and monitor.state['StationName'] == self.carrier.callSign:
                 dockedTo = "carrier"
-            self.ui.setTable(self.getTable(), dockedTo)
+            self.ui.setTable(self.getTable(), dockedTo, isTotal)
             if self.ui.track_btn:
                 if self.dockedConstruction and self.currentConstructionId == None:
                     self.ui.track_btn.grid()
@@ -153,7 +162,7 @@ class ColonizationPlugin:
         localCommodities = self.markets.get(self.currentMarketId, []) if self.currentMarketId else []
         for commodity, required in needed.items():
             table.append({
-                'commodityName': self.commodityMap.get(commodity, commodity),
+                'commodity': self.commodityMap[commodity],
                 'needed': required.needed() if isinstance(required, ConstructionResource) else required,
                 'cargo': self.cargo.get(commodity, 0),
                 'carrier': self.carrier.getCargo(commodity),
@@ -161,17 +170,41 @@ class ColonizationPlugin:
             })
         return table
 
-    def getCommodityMap(self):
-        map = {}
+    def _loadCommodityMap(self):
         for f in ('commodity.csv', 'rare_commodity.csv'):
             if not (self.config.app_dir_path / 'FDevIDs' / f).is_file():
                 continue
             with open(self.config.app_dir_path / 'FDevIDs' / f, 'r') as csvfile:
                 reader = csv.DictReader(csvfile)
                 for row in reader:
-                    map[row['symbol'].lower()] = row['name']
-        return map
-    
+                    symbol = row['symbol']
+                    self.commodityMap[symbol.lower()] = Commodity(symbol, row['category'], row['name'])
+
+    def _loadCommoditySorting(self):
+        language = self.config.get_str('language', default='en')
+        filePath = path.join(self.pluginDir, 'L10n', f"sorting-{language}.csv")
+        if not path.isfile(filePath):
+            filePath = path.join(self.pluginDir, 'L10n', "sorting-en.csv")
+        if path.isfile(filePath):
+            with open(filePath, mode='r', encoding='utf-8') as csvfile:
+                reader = csv.DictReader(csvfile)
+                category = ''
+                for row in reader:
+                    symbol = row['symbol'].strip()
+                    if symbol == '*':
+                        category = row['name'].strip()
+                    else:
+                        commodity = self.commodityMap.get(symbol.lower())
+                        if not commodity:
+                            commodity = Commodity(symbol, category, row['name'].strip())
+                            self.commodityMap[symbol.lower()] = commodity
+                        commodity.name = row['name'].strip()
+                        commodity.market_ord = int(row['market'].strip())
+                        commodity.carrier_ord = int(row['carrier'].strip())
+
+    def updateLanguage(self):
+        self._loadCommoditySorting()
+
     def load(self):
         self.constructions = []
         filePath = path.join(self.pluginDir, "constructions.json")
@@ -181,8 +214,8 @@ class ColonizationPlugin:
                     # skip old version
                     continue;
                 self.constructions.append(Construction(**c))
-        self.carrier.load(path.join(self.pluginDir, "fccargo.json"))   
-            
+        self.carrier.load(path.join(self.pluginDir, "fccargo.json"))
+
     def save(self):
         with open(path.join(self.pluginDir, "constructions.json"), 'w', encoding='utf-8') as file:
             json.dump(self.constructions, file, ensure_ascii=False, indent=4, cls=construction.ConstructionEncoder)
@@ -227,6 +260,9 @@ class ColonizationPlugin:
     def prevConstruction(self, event):
         if self.dockedConstruction:
             return
+        if not self.currentConstructionId:
+            self.currentConstructionId = 0
+            self.currentConstruction = None
         if self.currentConstructionId < 0:
             self.currentConstructionId = len(self.constructions)-1
             self.currentConstruction = self.constructions[self.currentConstructionId]
@@ -241,6 +277,9 @@ class ColonizationPlugin:
     def nextConstruction(self, event):
         if self.dockedConstruction:
             return
+        if not self.currentConstructionId:
+            self.currentConstructionId = 0
+            self.currentConstruction = None
         self.currentConstructionId += 1
         if (self.currentConstructionId >= len(self.constructions)):
             self.currentConstructionId = -1
@@ -269,7 +308,8 @@ class ColonizationPlugin:
             found.required = required
         else:
             self.currentConstructionId = None
-            self.currentConstruction = Construction(system=systemName, stationName=stationName, marketId=marketId, constructionProgress=constructionProgress, 
+            self.currentConstruction = Construction(system=systemName, stationName=stationName,
+                                                    marketId=marketId, constructionProgress=constructionProgress,
                                                     constructionComplete=constructionComplete, constructionFailed=constructionFailed, required=required)
         self.updateDisplay()
         

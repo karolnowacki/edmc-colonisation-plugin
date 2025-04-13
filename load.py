@@ -37,6 +37,7 @@ def plugin_prefs(parent, cmdr, is_beta):
     return frame
 
 def prefs_changed(cmdr, is_beta):
+    this.plugin.updateLanguage()
     this.plugin.updateDisplay()
 
 def capi_fleetcarrier(data):
