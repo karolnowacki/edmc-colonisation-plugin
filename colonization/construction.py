@@ -41,15 +41,24 @@ class Construction:
         self.stationName = stationName
         self.marketId = marketId
     def getShortName(self):
+        if not self.stationName:
+            return ""
         if self.stationName.startswith("$EXT_PANEL_ColonisationShip"):
             return self.system
         if "Construction Site: " in self.stationName:
             return self.stationName.split(": ")[1]
         return self.stationName
     def getName(self):
+        if not self.stationName:
+            return ""
+        suffix = ""
+        if self.constructionComplete:
+            suffix += " [complete]"
+        if self.constructionFailed:
+            suffix += " [failed]"
         if self.stationName.startswith("$EXT_PANEL_ColonisationShip"):
-            return "System Colonisation Ship"
-        return self.stationName
+            return "System Colonisation Ship"+suffix
+        return self.stationName+suffix
             
         
 class ConstructionEncoder(json.JSONEncoder):

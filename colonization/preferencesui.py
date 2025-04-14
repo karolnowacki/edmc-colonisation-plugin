@@ -1,19 +1,18 @@
 import tkinter as tk
 import tkinter.ttk as ttk
 import myNotebook as nb
+from companion import session, Session
 from os import path
 from functools import partial
 
-from colonization.colonization import ColonizationPlugin
-from colonization.construction import Construction
+from .colonization import ColonizationPlugin
 
 class PreferencesUi:
     
     PADX=10
     PADY=10
 
-    def __init__(self, config, plugin:ColonizationPlugin):
-        self.config = config
+    def __init__(self, plugin:ColonizationPlugin):
         self.plugin = plugin
         self.row = 0
         self.subscribers = {}
@@ -31,7 +30,7 @@ class PreferencesUi:
         nb.Label(frame, text="Fleet carrier last update:").grid(row=1, column=0)
         self.FClastupdate = nb.Label(frame, text=self.plugin.carrier.lastSync)
         self.FClastupdate.grid(row=1, column=1)
-        btn = nb.Button(frame, text="Load FC data", command=partial(self.event, 'forceFCload', None))
+        btn = nb.Button(frame, text="Load FC data", command=self.updateFleetCarrier)
         btn.grid(row=3, columnspan = 2, sticky=tk.EW, pady=5)
         self.nextRow()
         
@@ -78,3 +77,13 @@ class PreferencesUi:
     def updateFC(self, carrier):
         self.FCcallsign['text'] = str(carrier.callSign)
         self.FClastupdate['text'] = str(carrier.lastSync)
+        
+    def updateFleetCarrier(self):
+        if session.state == Session.STATE_OK:
+            self.FClastupdate['text'] = "Updating..."
+            carrier = session.requests_session.get(session.capi_host_for_galaxy() + session.FRONTIER_CAPI_PATH_FLEETCARRIER)
+            self.plugin.capi_fleetcarrier(carrier.json())
+            self.FCcallsign['text'] = str(carrier.callSign)
+            self.FClastupdate['text'] = str(carrier.lastSync)
+        else:
+            self.FClastupdate['text'] = "cAPI session is not open."
