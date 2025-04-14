@@ -30,7 +30,7 @@ class FleetCarrier:
     def syncData(self, data):
         self.callSign = data['name']['callsign']
         if not self.callSign:
-            return
+            return None
         self.lastSync = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat()
         
         self.cargo = {}
@@ -41,6 +41,7 @@ class FleetCarrier:
             else:
                 self.cargo[cn] = c['qty']
         self.save()
+        return self
                 
     def getCargo(self, commodity):
         return self.cargo.get(commodity, 0)
