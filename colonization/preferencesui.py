@@ -82,8 +82,12 @@ class PreferencesUi:
         if session.state == Session.STATE_OK:
             self.FClastupdate['text'] = "Updating..."
             carrier = session.requests_session.get(session.capi_host_for_galaxy() + session.FRONTIER_CAPI_PATH_FLEETCARRIER)
-            self.plugin.capi_fleetcarrier(carrier.json())
-            self.FCcallsign['text'] = str(carrier.callSign)
-            self.FClastupdate['text'] = str(carrier.lastSync)
+            data = carrier.json()
+            self.plugin.capi_fleetcarrier(data)
+            if self.plugin.carrier and self.plugin.carrier.callSign:
+                self.FCcallsign['text'] = str(self.plugin.carrier.callSign)
+                self.FClastupdate['text'] = str(self.plugin.carrier.lastSync)
+            else:
+                self.FClastupdate['text'] = "Missing Fleet Carrier data"
         else:
             self.FClastupdate['text'] = "cAPI session is not open."
