@@ -1,28 +1,30 @@
 import csv
 import json
 import re
+import os
 from os import path
 
 from . import construction
 from .construction import Construction,ConstructionResource
 from .fleetcarrier import FleetCarrier
-from ui import MainUi
+from .ui import MainUi
 
 from EDMCLogging import get_main_logger
 from monitor import monitor
+from config import config
+
 logger = get_main_logger()
 
 class ColonizationPlugin:
 
-    def __init__(self, config):
-        self.config = config
+    def __init__(self):
         self.commodityMap:dict[str,str] = self.getCommodityMap()
         self.constructions:list[Construction] = []
         self.carrier:FleetCarrier = FleetCarrier()
         self.cargo:dict[str,int] = {}
         self.currentConstruction:Construction|None = None
         self.currentConstructionId:int = -1
-        self.pluginDir:str = None
+        self.saveDir:str = None
         self.ui:MainUi = None
         self.dockedConstruction = False
         self.markets = {}
@@ -30,7 +32,10 @@ class ColonizationPlugin:
         logger.debug("initialized")
 
     def plugin_start3(self, plugin_dir:str):
-        self.pluginDir = plugin_dir
+        self.saveDir = path.abspath(path.join(plugin_dir, "../../colonization"))
+        print(self.saveDir)
+        if not path.exists(self.saveDir):
+            os.makedirs(self.saveDir)
         self.load()
 
     def cmdr_data(self, data, is_beta: bool):
@@ -74,6 +79,8 @@ class ColonizationPlugin:
             self.save()
             
         if entry['event'] == "ColonisationConstructionDepot":
+            if not state['StationName']:
+                return
             required={}
             for r in entry['ResourcesRequired']:
                 required[self.commodityFromName(r['Name'])] = ConstructionResource(
@@ -125,7 +132,12 @@ class ColonizationPlugin:
                     self.ui.setStation(self.currentConstruction.getName())
             else:
                 self.ui.setTitle("TOTAL")
-                self.ui.setStation("")
+                if len(self.constructions) == 0:
+                    self.ui.setTitle("")
+                    self.ui.setStation("Dock to construction site to start tracking progress")
+                else:
+                    self.ui.setTitle("TOTAL")
+                    self.ui.setStation("")
                 
             dockedTo = False
             if self.dockedConstruction:
@@ -139,7 +151,7 @@ class ColonizationPlugin:
                 else:
                     self.ui.track_btn.grid_remove()
             if self.ui.prev_btn and self.ui.next_btn:
-                if self.dockedConstruction:
+                if self.dockedConstruction or len(self.constructions) == 0:
                     self.ui.prev_btn.grid_remove()
                     self.ui.next_btn.grid_remove()
                 else:
@@ -164,9 +176,9 @@ class ColonizationPlugin:
     def getCommodityMap(self):
         map = {}
         for f in ('commodity.csv', 'rare_commodity.csv'):
-            if not (self.config.app_dir_path / 'FDevIDs' / f).is_file():
+            if not (config.app_dir_path / 'FDevIDs' / f).is_file():
                 continue
-            with open(self.config.app_dir_path / 'FDevIDs' / f, 'r') as csvfile:
+            with open(config.app_dir_path / 'FDevIDs' / f, 'r') as csvfile:
                 reader = csv.DictReader(csvfile)
                 for row in reader:
                     map[row['symbol'].lower()] = row['name']
@@ -174,17 +186,17 @@ class ColonizationPlugin:
     
     def load(self):
         self.constructions = []
-        filePath = path.join(self.pluginDir, "constructions.json")
+        filePath = path.join(self.saveDir, "constructions.json")
         if path.isfile(filePath):
             for c in json.load(open(filePath, 'r', encoding='utf-8')):
                 if ("needed" in c):
                     # skip old version
                     continue;
                 self.constructions.append(Construction(**c))
-        self.carrier.load(path.join(self.pluginDir, "fccargo.json"))   
+        self.carrier.load(path.join(self.saveDir, "fccargo.json"))   
             
     def save(self):
-        with open(path.join(self.pluginDir, "constructions.json"), 'w', encoding='utf-8') as file:
+        with open(path.join(self.saveDir, "constructions.json"), 'w', encoding='utf-8') as file:
             json.dump(self.constructions, file, ensure_ascii=False, indent=4, cls=construction.ConstructionEncoder)
     
     def getShoppingList(self, marketId:int|None=None) -> dict[str, int]:
@@ -216,7 +228,7 @@ class ColonizationPlugin:
             self.cargo[commodity] = 0
         return self.cargo[commodity]
 
-    def setUi(self, ui:MainUi):
+    def setupUi(self, ui:MainUi):
         self.ui = ui
         ui.on('prev', self.prevConstruction)
         ui.on('next', self.nextConstruction)
@@ -227,9 +239,11 @@ class ColonizationPlugin:
     def prevConstruction(self, event):
         if self.dockedConstruction:
             return
+        print(self.currentConstructionId)
         if self.currentConstructionId < 0:
             self.currentConstructionId = len(self.constructions)-1
-            self.currentConstruction = self.constructions[self.currentConstructionId]
+            if self.currentConstructionId >= 0:
+                self.currentConstruction = self.constructions[self.currentConstructionId]
         elif self.currentConstructionId == 0:
            self.currentConstructionId = -1
            self.currentConstruction = None
@@ -263,10 +277,12 @@ class ColonizationPlugin:
         if found:
             self.currentConstructionId = self.constructions.index(found)
             self.currentConstruction = found
+            found.stationName = stationName
             found.constructionProgress = constructionProgress
             found.constructionComplete = constructionComplete
             found.constructionFailed = constructionFailed
             found.required = required
+            self.save()
         else:
             self.currentConstructionId = None
             self.currentConstruction = Construction(system=systemName, stationName=stationName, marketId=marketId, constructionProgress=constructionProgress, 

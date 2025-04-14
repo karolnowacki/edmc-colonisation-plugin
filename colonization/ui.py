@@ -3,15 +3,17 @@ from os import path
 from functools import partial
 from enum import Enum
 
+from theme import theme
+
 class ViewMode(Enum):
     FULL = 0
     FILTERED = 1
 
 class MainUi:
     ROWS = 35
-    iconDir = path.join(path.dirname(__file__), "icons")
+    iconDir = path.join(path.dirname(__file__), "../icons")
     
-    def __init__(self, config):
+    def __init__(self):
         self.row = 0
         self.icons = {}
         self.icons['left_arrow'] = tk.PhotoImage(file=path.join(self.iconDir, "left_arrow.gif"))
@@ -20,7 +22,6 @@ class MainUi:
         self.icons['view_close'] = tk.PhotoImage(file=path.join(self.iconDir, "view_close.gif"))
         self.rows = None
         self.subscribers = {}
-        self.config = config
         self.title = None
         self.station = None
         self.track_btn = None
@@ -58,7 +59,7 @@ class MainUi:
         self.view_btn.bind("<Button-1>", self.changeView)
         self.view_btn.grid(row=0, column=4, sticky=tk.E)
 
-        self.station = tk.Label(frame, text="Station", justify=tk.CENTER)
+        self.station = tk.Label(frame, text="Loading...", justify=tk.CENTER)
         self.station.grid(row=1, column=0, columnspan=5, sticky=tk.EW)
         
         self.track_btn = tk.Button(frame, text="Track this construction", command=partial(self.event, "track", None))
@@ -149,14 +150,14 @@ class MainUi:
                 self.rows[row]['needed']['fg'] = 'green'
                 self.rows[row]['cargo']['fg'] = 'green'
                 self.rows[row]['carrier']['fg'] = 'green'
-            else:
+            elif theme.current:
                 if i['available']:
-                    self.rows[row]['name']['fg'] = '#FFF'
+                    self.rows[row]['name']['fg'] = theme.current['highlight']
                 else:
-                    self.rows[row]['name']['fg'] = self.config.get_str('dark_text')
-                self.rows[row]['needed']['fg'] = self.config.get_str('dark_text')
-                self.rows[row]['cargo']['fg'] = self.config.get_str('dark_text')
-                self.rows[row]['carrier']['fg'] = self.config.get_str('dark_text')
+                    self.rows[row]['name']['fg'] = theme.current['foreground']
+                self.rows[row]['needed']['fg'] = theme.current['foreground']
+                self.rows[row]['cargo']['fg'] = theme.current['foreground']
+                self.rows[row]['carrier']['fg'] = theme.current['foreground']
             row+=1
 
         for i in range(row, self.ROWS):
@@ -173,9 +174,9 @@ class MainUi:
         
 
     def setStation(self, station, color=None):
-        if self.station:
+        if self.station and theme.current:
             self.station['text'] = str(station)
             if color:
                 self.station['fg'] = color
-            else:
-                self.station['fg'] = self.config.get_str('dark_text')
+            elif theme.current:
+                self.station['fg'] = theme.current['foreground']
