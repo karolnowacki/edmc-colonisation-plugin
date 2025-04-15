@@ -33,7 +33,7 @@ class PreferencesUi:
         self.FClastupdate.grid(row=1, column=1)
         btn = nb.Button(frame, text="Load FC data", command=self.updateFleetCarrier)
         btn.grid(row=3, columnspan = 2, sticky=tk.EW, pady=5)
-        self.ignoreFCUpdate = tk.BooleanVar(value=config.get_bool("ignoreFCUpdate"))
+        self.ignoreFCUpdate = tk.BooleanVar(value=config.get_bool("colonization.ignoreFCUpdate"))
         nb.Checkbutton(frame, text="Ignore event based cAPI Fleet Carrier update", variable=self.ignoreFCUpdate).grid(row=4, columnspan = 2, sticky=tk.W)
         self.nextRow()
         ttk.Separator(self.frame, orient=tk.HORIZONTAL).grid(row=self.row, sticky=tk.EW, padx=self.PADX)
