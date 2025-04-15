@@ -33,11 +33,11 @@ def plugin_prefs(parent, cmdr, is_beta):
     return frame
 
 def prefs_changed(cmdr, is_beta):
-    config.set("ignoreFCUpdate", this.prefs.ignoreFCUpdate.get())
+    config.set("colonization.ignoreFCUpdate", this.prefs.ignoreFCUpdate.get())
     this.plugin.updateDisplay()
 
 def capi_fleetcarrier(data):
-    if config.get_bool("ignoreFCUpdate"):
+    if config.get_bool("colonization.ignoreFCUpdate"):
         return
     this.plugin.capi_fleetcarrier(data)
 
