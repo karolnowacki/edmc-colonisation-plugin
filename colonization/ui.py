@@ -77,7 +77,8 @@ class MainUi:
         self.rows = list()
         for i in range(self.ROWS):
             labels = {}
-            labels['name'] = tk.Label(self.table_frame)
+            labels['name'] = tk.Label(self.table_frame, justify=tk.LEFT)
+            labels['name'].grid_configure(sticky=tk.W)
             labels['name'].grid_remove()
             labels['needed'] = tk.Label(self.table_frame)
             labels['needed'].grid_remove()
