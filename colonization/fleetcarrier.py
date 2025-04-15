@@ -57,6 +57,8 @@ class FleetCarrier:
     def removeCargo(self, commodity:str, qty:int) -> int:
         if commodity in self.cargo:
             self.cargo[commodity] -= qty
+            if self.cargo[commodity] < 0:
+                self.cargo[commodity] = 0
         else:
             self.cargo[commodity] = 0
         self.save()

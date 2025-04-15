@@ -5,6 +5,7 @@ import myNotebook as nb
 from time import time
 from os import path 
 from EDMCLogging import get_main_logger
+from config import config
 
 from colonization.colonization import ColonizationPlugin
 from colonization.ui import MainUi
@@ -32,9 +33,12 @@ def plugin_prefs(parent, cmdr, is_beta):
     return frame
 
 def prefs_changed(cmdr, is_beta):
+    config.set("ignoreFCUpdate", this.prefs.ignoreFCUpdate.get())
     this.plugin.updateDisplay()
 
 def capi_fleetcarrier(data):
+    if config.get_bool("ignoreFCUpdate"):
+        return
     this.plugin.capi_fleetcarrier(data)
 
 def plugin_app(parent):
