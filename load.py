@@ -11,7 +11,7 @@ from colonization.colonization import ColonizationPlugin
 from colonization.ui import MainUi
 from colonization.preferencesui import PreferencesUi
 
-this = sys.modules[__name__] 
+this = sys.modules[__name__]
 
 logger = get_main_logger()
 
@@ -34,6 +34,7 @@ def plugin_prefs(parent, cmdr, is_beta):
 
 def prefs_changed(cmdr, is_beta):
     config.set("colonization.ignoreFCUpdate", this.prefs.ignoreFCUpdate.get())
+    this.plugin.updateLanguage()
     this.plugin.updateDisplay()
 
 def capi_fleetcarrier(data):

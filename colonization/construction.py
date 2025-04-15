@@ -34,6 +34,7 @@ class Construction:
         self.system = system
         self.stationName = stationName
         self.marketId = marketId
+
     def getShortName(self):
         if not self.stationName:
             return ""
@@ -42,6 +43,17 @@ class Construction:
         if "Construction Site: " in self.stationName:
             return self.stationName.split(": ")[1]
         return self.stationName
+
+    def getSiteName(self):
+        if self.stationName:
+            if self.stationName.startswith("$EXT_PANEL_ColonisationShip:"):
+                return ptl("$EXT_PANEL_ColonisationShip")+" "+self.system
+            if self.stationName.startswith("Planetary Construction Site:"):
+                return ptl("Planetary Construction Site")+": "+self.system
+            if self.stationName.startswith("Orbital Construction Site:"):
+                return ptl("Orbital Construction Site")+": "+self.system
+        return self.stationName
+
     def getName(self):
         if not self.stationName:
             return ""
@@ -53,7 +65,7 @@ class Construction:
         if self.stationName.startswith("$EXT_PANEL_ColonisationShip"):
             return "System Colonisation Ship"+suffix
         return self.stationName+suffix
-            
+
         
 class ConstructionEncoder(json.JSONEncoder):
     def default(self, o):

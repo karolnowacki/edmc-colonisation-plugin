@@ -1,0 +1,38 @@
+/* UI labels and buttons */
+"Colonization:" = " ";
+"Total" = "Итого все стройки";
+"Station" = "Станция";
+"Track this construction" = "Отслеживать строительство";
+"This construction is not tracked" = "Эта стройка не отслеживается";
+"{} (docked)" = "{} (пристыкован)";
+"{} (not tracked)" = "{} (не отслеживается)";
+"Commodity" = "Материалы";
+"Need" = "Нужно";
+"Cargo" = "Корабль";
+"Carrier" = "Авианосец";
+"Buy" = "Купить";
+"SortingMode.MARKET" = "Станция";
+"SortingMode.CARRIER" = "Авианосец";
+"SortingMode.ALPHABET" = "Алфавит";
+
+/* Construction sites replacement */
+"$EXT_PANEL_ColonisationShip" = "Колонизационный корабль";
+"Planetary Construction Site" = "Поселение";
+"Orbital Construction Site" = "Станция";
+
+/* Commodity categories */
+"Chemicals" = "Химикаты";
+"Consumer Items" = "Потребительские товары";
+"Foods" = "Продукты питания";
+"Industrial Materials" = "Промышленные материалы";
+"Legal Drugs" = "Легальные психоактивные вещества";
+"Machinery" = "Машинное оборудование";
+"Medicines" = "Лекарства";
+"Metals" = "Металлы";
+"Minerals" = "Минералы";
+"Salvage" = "Спасенное имущество";
+"Slavery" = "Рабы";
+"Technology" = "Технологии";
+"Textiles" = "Текстиль";
+"Waste" = "Отходы";
+"Weapons" = "Оружие";
