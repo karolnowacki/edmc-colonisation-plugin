@@ -29,7 +29,7 @@ class MainUi:
         self.subscribers: dict[str, Callable[[tk.Event | None], None]] = {}
         self.title: Optional[tk.Label] = None
         self.station: Optional[tk.Label] = None
-        self.total_label = None
+        self.total_label: Optional[tk.Label] = None
         self.track_btn: Optional[tk.Button] = None
         self.prev_btn: Optional[tk.Label] = None
         self.next_btn: Optional[tk.Label] = None
@@ -77,27 +77,27 @@ class MainUi:
         self.table_frame.columnconfigure(0, weight=1)
         self.table_frame.grid(row=1, column=0, sticky=tk.W, columnspan=5)
 
-        tk.Label(self.table_frame, text="Commodity").grid(row=0, column=0, sticky="w")
-        tk.Label(self.table_frame, text="Demand |").grid(row=0, column=2, sticky="e")
-        tk.Label(self.table_frame, text="Buy |").grid(row=0, column=1, sticky="e")
-        tk.Label(self.table_frame, text="Cargo").grid(row=0, column=4, sticky="e")
-        tk.Label(self.table_frame, text="Carrier |").grid(row=0, column=3, sticky="w")
+        tk.Label(self.table_frame, text="Commodity").grid(row=0, column=0, sticky=tk.W)
+        tk.Label(self.table_frame, text="Buy |").grid(row=0, column=1, sticky=tk.E)
+        tk.Label(self.table_frame, text="Demand |").grid(row=0, column=2, sticky=tk.E)
+        tk.Label(self.table_frame, text="Carrier |").grid(row=0, column=3, sticky=tk.E)
+        tk.Label(self.table_frame, text="Cargo").grid(row=0, column=4, sticky=tk.E)
 
         self.rows = []
         for i in range(self.ROWS):
             labels = {
-                'name': tk.Label(self.table_frame, anchor="w"),
-                'needed': tk.Label(self.table_frame, anchor="e"),
-                'demand': tk.Label(self.table_frame, anchor="e"),
-                'cargo': tk.Label(self.table_frame, anchor="e"),
-                'carrier': tk.Label(self.table_frame, anchor="e")
+                'name': tk.Label(self.table_frame, anchor=tk.W),
+                'needed': tk.Label(self.table_frame, anchor=tk.E),
+                'demand': tk.Label(self.table_frame, anchor=tk.E),
+                'cargo': tk.Label(self.table_frame, anchor=tk.E),
+                'carrier': tk.Label(self.table_frame, anchor=tk.E)
             }
             labels['name'].grid_configure(sticky=tk.W)
             for label in labels.values():
                 label.grid_remove()
             self.rows.append(labels)
 
-        self.total_label = tk.Label(frame, text="0 t to deliever", justify=tk.CENTER)
+        self.total_label = tk.Label(frame, text="0 t to deliver", justify=tk.CENTER)
         self.total_label.grid(row=2, column=0, columnspan=5, sticky=tk.EW)
 
         return self.frame
@@ -132,7 +132,6 @@ class MainUi:
                 continue
 
             to_buy = max(0,i['needed']-i['cargo']-i['carrier'])
-            demand = max(0,i['cargo']+i['carrier'])
 
             if self.view_mode == ViewMode.FILTERED and not docked:
                 if not i['available']:
@@ -147,10 +146,10 @@ class MainUi:
                 break
 
             self.rows[row]['name']['text'] = i['commodityName']
-            self.rows[row]['needed']['text'] = "{} |".format(i['needed'])
-            self.rows[row]['demand']['text'] = " {} |".format(to_buy)
-            self.rows[row]['cargo']['text'] = "{} |".format(i['cargo'])
+            self.rows[row]['needed']['text'] = "{} |".format(to_buy)
+            self.rows[row]['demand']['text'] = " {} |".format(i['needed'])
             self.rows[row]['carrier']['text'] = "{} |".format(i['carrier'])
+            self.rows[row]['cargo']['text'] = "{}".format(i['cargo'])
 
             self.rows[row]['name'].grid(row=row + 1, column=0, sticky="w")
             self.rows[row]['needed'].grid(row=row + 1, column=1, sticky="e")
@@ -196,14 +195,14 @@ class MainUi:
             elif theme.current:
                 self.station['fg'] = theme.current['foreground']
 
-    def setTotal(self, cargo, maxcargo,color=None):
+    def set_total(self, cargo:int, maxcargo:int, color:str | None = None) -> None:
         if maxcargo > 0:
             flight = float(cargo)/float(maxcargo)
         else:
             flight = 0.0
-        if self.total_label:
+        if self.total_label and theme.current:
             self.total_label['text'] = f"Remaining {flight:.1f} flights at {maxcargo} tons each, total {str(cargo)} t"
             if color:
                 self.total_label['fg'] = color
             else:
-                self.total_label['fg'] = self.config.get_str('dark_text')
+                self.total_label['fg'] = theme.current['foreground']

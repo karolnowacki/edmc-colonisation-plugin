@@ -109,13 +109,13 @@ class ColonizationPlugin:
 
         if entry['event'] == "Cargo":
             self.cargo = state['Cargo'].copy()
-            self.maxcargo = max(int(entry.get("Count",0)),self.maxcargo)
+            self.maxcargo = max(int(entry.get("Count", 0)), self.maxcargo)
             self.update_display()
             self.save()
 
         if entry['event'] == 'StartUp':
             self.cargo = state['Cargo'].copy()
-            self.maxcargo = max(int(entry.get("Count",0)),self.maxcargo)
+            self.maxcargo = max(int(entry.get("Count", 0)), self.maxcargo)
             self.set_docked(state)
 
         if entry['event'] == 'Docked':
@@ -151,14 +151,14 @@ class ColonizationPlugin:
                     self.ui.set_title("TOTAL")
                     self.ui.set_station("")
 
-            self.ui.setTotal(self.getTotalShoppingValue(), self.maxcargo)
+            self.ui.set_total(self.get_total_shopping_value(), self.maxcargo)
             docked_to: Optional[str] = None
             if self.dockedConstruction:
                 docked_to = "construction"
             if self.carrier.callSign and monitor.state['StationName'] == self.carrier.callSign:
                 docked_to = "carrier"
             self.ui.set_table(self.get_table(), docked_to)
-            if self.ui.track_btn:
+            if self.ui.track_btn and self.ui.total_label:
                 if self.dockedConstruction and self.currentConstructionId is None:
                     self.ui.track_btn.grid()
                     self.ui.total_label.grid_remove()
@@ -187,8 +187,8 @@ class ColonizationPlugin:
             })
         return table
 
-    def getTotalShoppingValue(self):
-        needed = self.currentConstruction.required if self.currentConstruction else self.getTotalShoppingList()
+    def get_total_shopping_value(self) -> int:
+        needed = self.currentConstruction.required if self.currentConstruction else self.get_total_shopping_list()
         value = 0
         for commodity, required in needed.items():
             value += required.needed() if isinstance(required, ConstructionResource) else required
