@@ -3,6 +3,8 @@ from config import config
 from os import path
 from functools import partial
 from enum import Enum
+from typing import Any, Callable, Optional
+
 from theme import theme
 from collections import deque
 
@@ -40,89 +42,89 @@ class MainUi:
     ROWS = 20
     COLLAPSABLE = True
     iconDir = path.join(path.dirname(__file__), "../icons")
-    
-    def __init__(self):
+
+    def __init__(self) -> None:
+        self.frame: Optional[tk.Frame] = None
         self.row = 0
-        self.icons = {}
-        self.icons['left_arrow'] = tk.PhotoImage(file=path.join(self.iconDir, "left_arrow.gif"))
-        self.icons['right_arrow'] = tk.PhotoImage(file=path.join(self.iconDir, "right_arrow.gif"))
-        self.icons['view_open'] = tk.PhotoImage(file=path.join(self.iconDir, "view_open.gif"))
-        self.icons['view_close'] = tk.PhotoImage(file=path.join(self.iconDir, "view_close.gif"))
-        self.rows = None
-        self.top_rows = 0
-        self.bottom_rows = 0
-        self.subscribers = {}
-        self.title = None
-        self.station = None
-        self.track_btn = None
-        self.prev_btn = None
-        self.next_btn = None
-        self.view_btn = None
-        self.view_table = True
-        self.sorting_mode:SortingMode = SortingMode.MARKET
+        self.icons = {
+            'left_arrow': tk.PhotoImage(file=path.join(self.iconDir, "left_arrow.gif")),
+            'right_arrow': tk.PhotoImage(file=path.join(self.iconDir, "right_arrow.gif")),
+            'view_open': tk.PhotoImage(file=path.join(self.iconDir, "view_open.gif")),
+            'view_close': tk.PhotoImage(file=path.join(self.iconDir, "view_close.gif"))
+        }
+        self.rows: Optional[list] = None
+        self.subscribers: dict[str, Callable[[tk.Event | None], None]] = {}
+        self.title: Optional[tk.Label] = None
+        self.station: Optional[tk.Label] = None
+        self.track_btn: Optional[tk.Button] = None
+        self.prev_btn: Optional[tk.Label] = None
+        self.next_btn: Optional[tk.Label] = None
+        self.view_btn: Optional[tk.Label] = None
+        self.table_frame: Optional[tk.Frame] = None
+        self.view_table: bool = True
+        self.sorting_mode: SortingMode = SortingMode.MARKET
+        self.top_rows: int = 0
+        self.bottom_rows: int = 0
         self.categories: dict[str,CommodityCategory] = {}
         self.ROWS = config.get_int("colonization.Rows", default=25)
         self.CATEGORIES = config.get_bool("colonization.Categories", default=True)
         self.COLLAPSABLE = config.get_bool("colonization.Collapsable", default=True)
 
-    def nextRow(self):
-        self.row+=1
+    def next_row(self) -> int:
+        self.row += 1
+        return self.row
 
-    def plugin_app(self, parent:tk.Widget) -> tk.Widget:
+    def plugin_app(self, parent: tk.Widget) -> tk.Widget:
         self.frame = tk.Frame(parent)
         self.frame.columnconfigure(0, weight=1)
         self.frame.grid(sticky=tk.EW)
         self.sorting_var = tk.StringVar()
-        self.resetFrame()
+        self.reset_frame()
         return self.frame
 
-    def resetFrame(self):
+    def reset_frame(self):
         for child in list(self.frame.children.values()):
             child.destroy()
         frame = tk.Frame(self.frame)
         frame.columnconfigure(2, weight=1)
         frame.grid(row=0, column=0, sticky=tk.EW)
 
-        #tk.Label(frame, text=ptl("Colonization:"), anchor=tk.W).grid(row=0, column=0, sticky=tk.W)
+        #tk.Label(frame, text="Colonization:", anchor=tk.W).grid(row=0, column=0, sticky=tk.W)
 
         self.sorting_var.set(ptl(str(self.sorting_mode)))
-        self.sorting_cb = tk.OptionMenu(frame, self.sorting_var, *[ptl(str(e)) for e in SortingMode], command=self.changeSorting)
+        self.sorting_cb = tk.OptionMenu(frame, self.sorting_var, *[ptl(str(e)) for e in SortingMode], command=self.change_sorting)
         self.sorting_cb.grid(row=0, column=0, sticky=tk.W)
 
         self.prev_btn = tk.Label(frame, image=self.icons['left_arrow'], cursor="hand2")
         self.prev_btn.bind("<Button-1>", partial(self.event, "prev"))
         self.prev_btn.grid(row=0, column=1, sticky=tk.W)
-        
+
         self.title = tk.Label(frame, text=ptl("Total"), justify=tk.CENTER, anchor=tk.CENTER)
         self.title.grid(row=0, column=2, sticky=tk.EW)
-        
+
         self.next_btn = tk.Label(frame, image=self.icons['right_arrow'], cursor="hand2")
         self.next_btn.bind("<Button-1>", partial(self.event, "next"))
         self.next_btn.grid(row=0, column=3, sticky=tk.W)
-        
+
         self.view_btn = tk.Label(frame, image=self.icons['view_close'], cursor="hand2")
-        self.view_btn.bind("<Button-1>", self.changeView)
+        self.view_btn.bind("<Button-1>", self.change_view)
         self.view_btn.grid(row=0, column=4, sticky=tk.E)
 
         self.station = tk.Label(frame, text=ptl("Loading..."), justify=tk.CENTER)
         self.station.grid(row=1, column=0, columnspan=5, sticky=tk.EW)
-        
+
         self.track_btn = tk.Button(frame, text=ptl("Track this construction"), command=partial(self.event, "track", None))
         self.track_btn.grid(row=2, column=0, sticky=tk.EW, columnspan=5)
 
         self.table_frame = tk.Frame(self.frame, highlightthickness=1)
-        #self.table_frame.columnconfigure(0, weight=1)
-        #self.table_frame.grid(row=1, column=0, sticky=tk.EW)
 
-        #fontDefault = ("Tahoma", 9, "normal")
-        #fontMono = ("Tahoma", 9, "normal")
         tk.Label(self.table_frame, text=ptl("Commodity"), pady=0, width=20, height=1, anchor=tk.W).grid(row=0, column=0)
         tk.Label(self.table_frame, text=ptl("Need"),      pady=0, width=6, height=1, anchor=tk.E).grid(row=0, column=1)
         tk.Label(self.table_frame, text=ptl("Cargo"),     pady=0, width=6, height=1, anchor=tk.E).grid(row=0, column=2)
         tk.Label(self.table_frame, text=ptl("Carrier"),   pady=0, width=6, height=1, anchor=tk.E).grid(row=0, column=3)
         tk.Label(self.table_frame, text=ptl("Buy"),       pady=0, width=6, height=1, anchor=tk.E).grid(row=0, column=4)
 
-        self.rows = list()
+        self.rows = []
         for i in range(self.ROWS):
             self.table_frame.grid_rowconfigure(i+1, pad=0)
             labels = {}
@@ -143,14 +145,14 @@ class MainUi:
             labels['buy'].grid_remove()
             self.rows.append(labels)
 
-    def event(self, event, tkEvent):
+    def event(self, event: str, tk_event: tk.Event | None) -> None:
         if event in self.subscribers:
-            self.subscribers[event](tkEvent)
+            self.subscribers[event](tk_event)
 
-    def on(self, event, function):
+    def on(self, event: str, function: Callable[[tk.Event | None], None]) -> None:
         self.subscribers[event] = function
-        
-    def changeView(self, event):
+
+    def change_view(self, event: tk.Event) -> None:
         if self.view_table:
             self.view_btn['image'] = self.icons['view_open']
             self.view_table = False
@@ -159,15 +161,15 @@ class MainUi:
             self.view_table = True
         self.event('update', None)
 
-    def changeSorting(self, event):
+    def change_sorting(self, event):
         sorting = self.sorting_var.get()
         index = [ptl(str(e)) for e in SortingMode].index(sorting)
         self.sorting_mode = list(SortingMode)[index]
         self.event('update', None)
 
-    def setTitle(self, title):
+    def set_title(self, text: str) -> None:
         if self.title:
-            self.title['text'] = title
+            self.title['text'] = text
 
     def _toggle_category(self, event, c:str):
         cc = self.categories[c]
@@ -201,19 +203,19 @@ class MainUi:
         if row >= self.ROWS:
             row = self.ROWS-1
         if cc.collapsed == CollapseMode.LEADING:
-            self.rows[row]['name']['text'] = '^ ({}) {}'.format(len(cc.rows), ptl(cc.symbol))
+            self.rows[row]['name']['text'] = '▲ ({}) {}'.format(len(cc.rows), ptl(cc.symbol))
             self.rows[row]['name'].bind("<Button-1>", lambda e,cnt=len(cc.rows): self._decr_top_rows(e,cnt))
         elif cc.collapsed == CollapseMode.TRAILING:
-            self.rows[row]['name']['text'] = '� ({}) {}'.format(len(cc.rows), ptl(cc.symbol))
+            self.rows[row]['name']['text'] = '▼ ({}) {}'.format(len(cc.rows), ptl(cc.symbol))
             self.rows[row]['name'].bind("<Button-1>", lambda e,cnt=len(cc.rows): self._incr_top_rows(e,cnt))
         elif self.COLLAPSABLE:
             self.rows[row]['name'].bind("<Button-1>", lambda e,category=cc.symbol: self._toggle_category(e,category))
             if cc.collapsed:
-                self.rows[row]['name']['text'] = '? ({}) {}'.format(len(cc.rows), ptl(cc.symbol))
+                self.rows[row]['name']['text'] = '▶ ({}) {}'.format(len(cc.rows), ptl(cc.symbol))
             else:
-                self.rows[row]['name']['text'] = '? ' + ptl(cc.symbol)
+                self.rows[row]['name']['text'] = '▽ ' + ptl(cc.symbol)
         else:
-            self.rows[row]['name']['text'] = '? ' + ptl(cc.symbol)
+            self.rows[row]['name']['text'] = '▽ ' + ptl(cc.symbol)
 
         fg_color = theme.current['highlight'] if theme.current else 'blue'
         self.rows[row]['name']['fg'] = fg_color
@@ -264,7 +266,8 @@ class MainUi:
             self.rows[row]['carrier']['fg'] = fg_color
             self.rows[row]['buy']['fg'] = fg_color
 
-    def setTable(self, table: list[TableEntry], docked, isTotal: bool):
+
+    def set_table(self, table: list[TableEntry], docked, isTotal: bool):
         if not self.rows:
             return
 
@@ -336,13 +339,11 @@ class MainUi:
             self.table_frame.grid_remove()
         else:
             self.table_frame.grid()
-        
 
-    def setStation(self, station, color=None):
+
+    def set_station(self, value: str | None, color: str | None = None) -> None:
         if self.station and theme.current:
-            if self.station['text'] != str(station):
-                self.top_rows = 0
-                self.station['text'] = str(station)
+            self.station['text'] = str(value)
             if color:
                 self.station['fg'] = color
             elif theme.current:

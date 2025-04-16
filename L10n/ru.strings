@@ -1,5 +1,6 @@
 /* UI labels and buttons */
 "Colonization:" = " ";
+"Loading..." = "Загрузка данных...";
 "Total" = "Итого все стройки";
 "Station" = "Станция";
 "Track this construction" = "Отслеживать строительство";
@@ -37,3 +38,14 @@
 "Waste" = "Отходы";
 "Weapons" = "Оружие";
 "Others Commodities" = "Остальные товары";
+
+/* Plugin settings */
+"Fleet carrier call sign:" = "Авианосец:";
+"Fleet carrier last update:" = "Время обновления Авианосца:";
+"Load FC data" = "Загрузить данные Авианосца";
+"Ignore event based cAPI Fleet Carrier update" = "Игнорировать события cAPI обновления данных Авианосца";
+"Show commodity categories" = "Показывать категории товаров";
+"Collapsable commodity categories" = "Разрешить сворачивать категории товаров";
+"Commodity rows:" = "Строк в таблице товаров";
+"List of tracked construction sites" = "Отслеживаемые стройки";
+"Remove from tracking" = "Не отслеживать";
