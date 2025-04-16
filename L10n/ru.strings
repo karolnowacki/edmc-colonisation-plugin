@@ -8,8 +8,8 @@
 "{} (not tracked)" = "{} (не отслеживается)";
 "Commodity" = "Материалы";
 "Need" = "Нужно";
-"Cargo" = "Корабль";
-"Carrier" = "Авианосец";
+"Cargo" = "Судно";
+"Carrier" = "Авиан.";
 "Buy" = "Купить";
 "SortingMode.MARKET" = "Станция";
 "SortingMode.CARRIER" = "Авианосец";
@@ -36,3 +36,4 @@
 "Textiles" = "Текстиль";
 "Waste" = "Отходы";
 "Weapons" = "Оружие";
+"Others Commodities" = "Остальные товары";

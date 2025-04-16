@@ -2,11 +2,9 @@ import csv
 import json
 import re
 import os
-import l10n
-import functools
 from os import path
 
-from .data import Commodity, TableEntry
+from .data import Commodity, TableEntry, ptl
 from . import construction
 from .construction import Construction,ConstructionResource
 from .fleetcarrier import FleetCarrier
@@ -17,8 +15,6 @@ from monitor import monitor
 from config import config
 
 logger = get_main_logger()
-
-ptl = functools.partial(l10n.translations.tl, context=__file__)
 
 class ColonizationPlugin:
 
@@ -218,6 +214,7 @@ class ColonizationPlugin:
 
     def updateLanguage(self):
         self._loadCommoditySorting()
+        self.ui.resetFrame()
 
     def load(self):
         self.constructions = []
