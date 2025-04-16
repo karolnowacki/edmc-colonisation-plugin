@@ -1,4 +1,18 @@
-﻿class Commodity:
+﻿from l10n import translations
+
+_ENGLISH_TRANSLATIONS = {
+    "SortingMode.MARKET": "Market",
+    "SortingMode.CARRIER": "Carrier",
+    "SortingMode.ALPHABET": "Alphabet",
+}
+
+
+def ptl(x: str) -> str:
+    result = translations.translate(x, context=__file__)
+    return result if result != x else _ENGLISH_TRANSLATIONS.get(x, x)
+
+
+class Commodity:
     def __init__(self, symbol:str, category:str, name:str):
         self.symbol = symbol.strip() if symbol else ''
         self.category = category
