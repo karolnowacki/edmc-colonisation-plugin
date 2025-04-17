@@ -1,5 +1,5 @@
 import sys
-from colonization.config import Config
+from config import config
 
 from colonization.colonization import ColonizationPlugin
 from colonization.ui import MainUi
@@ -28,11 +28,12 @@ def plugin_prefs(parent, cmdr, is_beta):
 
 
 def prefs_changed(cmdr, is_beta):
-    this.prefs.prefs_changed(cmdr, is_beta)
+    config.set("colonization.ignoreFCUpdate", this.prefs.ignoreFCUpdate.get())
+    this.plugin.update_display()
 
 
 def capi_fleetcarrier(data):
-    if Config.IGNORE_FC_UPDATE.get():
+    if config.get_bool("colonization.ignoreFCUpdate"):
         return
     this.plugin.capi_fleetcarrier(data)
 

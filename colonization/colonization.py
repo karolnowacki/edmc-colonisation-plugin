@@ -5,18 +5,18 @@ import os
 from os import path
 from typing import Any, Optional
 
+from . import construction
+from .construction import Construction, ConstructionResource
+from .fleetcarrier import FleetCarrier
+from .ui import MainUi
+
 from EDMCLogging import get_main_logger
 from monitor import monitor
 from config import config
 from companion import CAPIData
 
-from . import construction
-from .construction import Construction, ConstructionResource
-from .fleetcarrier import FleetCarrier
-from .ui import MainUi
-from .config import Config
-
 logger = get_main_logger()
+
 
 class ColonizationPlugin:
 
@@ -161,12 +161,10 @@ class ColonizationPlugin:
             if self.ui.track_btn and self.ui.total_label:
                 if self.dockedConstruction and self.currentConstructionId is None:
                     self.ui.track_btn.grid()
-                    if Config.SHOW_TOTALS.get():
-                        self.ui.total_label.grid_remove()
+                    self.ui.total_label.grid_remove()
                 else:
                     self.ui.track_btn.grid_remove()
-                    if Config.SHOW_TOTALS.get():
-                        self.ui.total_label.grid()
+                    self.ui.total_label.grid()
             if self.ui.prev_btn and self.ui.next_btn:
                 if self.dockedConstruction or len(self.constructions) == 0:
                     self.ui.prev_btn.grid_remove()

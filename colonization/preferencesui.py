@@ -2,13 +2,13 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import myNotebook as nb
 from companion import session, Session
+from config import config
 from functools import partial
-from typing import Callable, Optional
+from typing import Callable
 
 from .colonization import ColonizationPlugin
 from .colonization import Construction
 from .colonization import FleetCarrier
-from .config import Config
 
 
 class PreferencesUi:
@@ -19,13 +19,11 @@ class PreferencesUi:
         self.plugin = plugin
         self.row = 0
         self.subscribers: dict[str, Callable[[tk.Event], None]] = {}
-        self.frame: Optional[ttk.Frame] = None
-        self.fc_callsign: Optional[tk.Label] = None
-        self.fc_last_update: Optional[tk.Label] = None
-        self.construction_list: Optional[ttk.Frame] = None
-        self.ignore_fc_update: Optional[tk.Variable] = None
-        self.show_station_name: Optional[tk.Variable] = None
-        self.show_totals: Optional[tk.Variable] = None
+        self.frame: ttk.Frame | None = None
+        self.fc_callsign: tk.Label | None = None
+        self.fc_last_update: tk.Label | None = None
+        self.construction_list: ttk.Frame | None = None
+        self.ignoreFCUpdate: tk.BooleanVar | None = None
 
     def plugin_prefs(self, parent: ttk.Notebook, cmdr: str, is_beta: bool) -> nb.Frame:
         self.frame = nb.Frame(parent)
@@ -42,24 +40,18 @@ class PreferencesUi:
         self.fc_last_update.grid(row=1, column=1)
         btn = nb.Button(frame, text="Load FC data", command=self.call_capi_fc)
         btn.grid(row=3, columnspan=2, sticky=tk.EW, pady=5)
-        self.ignore_fc_update = Config.IGNORE_FC_UPDATE.tk_var()
-        nb.Checkbutton(frame, text="Ignore event based cAPI Fleet Carrier update", variable=self.ignore_fc_update).grid(
+        self.ignoreFCUpdate = tk.BooleanVar(value=config.get_bool("colonization.ignoreFCUpdate"))
+        nb.Checkbutton(frame, text="Ignore event based cAPI Fleet Carrier update", variable=self.ignoreFCUpdate).grid(
             row=4, columnspan=2, sticky=tk.W)
-
-        ttk.Separator(self.frame, orient=tk.HORIZONTAL).grid(row=self.next_row(), sticky=tk.EW, padx=self.PAD_X)
-
-        self.show_station_name = Config.SHOW_STATION_NAME.tk_var()
-        nb.Checkbutton(self.frame, text="Show station name line", variable=self.show_station_name).grid(row=self.next_row(), sticky=tk.W, padx=self.PAD_X, pady=(self.PAD_Y, 0))
-
-        self.show_totals = Config.SHOW_TOTALS.tk_var()
-        nb.Checkbutton(self.frame, text="Show totals line", variable=self.show_totals).grid(row=self.next_row(), sticky=tk.W, padx=self.PAD_X)
         self.next_row()
 
-        ttk.Separator(self.frame, orient=tk.HORIZONTAL).grid(row=self.next_row(), sticky=tk.EW, padx=self.PAD_X, pady=(self.PAD_Y, 0))
+        ttk.Separator(self.frame, orient=tk.HORIZONTAL).grid(row=self.row, sticky=tk.EW, padx=self.PAD_X)
+        self.next_row()
 
         self.construction_list = ttk.Frame(self.frame, style='nb.TFrame')
-        self.construction_list.grid(row=self.next_row(), column=0, sticky=tk.EW, padx=self.PAD_X, pady=self.PAD_Y)
+        self.construction_list.grid(row=self.row, column=0, sticky=tk.EW, padx=self.PAD_X, pady=self.PAD_Y)
         self.build_construction_list()
+        self.next_row()
 
         return self.frame
 
@@ -120,12 +112,3 @@ class PreferencesUi:
                     self.fc_last_update['text'] = "Missing Fleet Carrier data"
         elif self.fc_last_update:
             self.fc_last_update['text'] = "cAPI session is not open."
-
-    def prefs_changed(self, cmdr:str, is_beta:bool) -> None:
-        if self.ignore_fc_update:
-            Config.IGNORE_FC_UPDATE.set(self.ignore_fc_update.get())
-        if self.show_totals:
-            Config.SHOW_TOTALS.set(self.show_totals.get())
-        if self.show_station_name:
-            Config.SHOW_STATION_NAME.set(self.show_station_name.get())
-        self.plugin.update_display()

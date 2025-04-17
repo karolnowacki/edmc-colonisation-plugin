@@ -6,8 +6,6 @@ from typing import Any, Callable, Optional
 
 from theme import theme
 
-from colonization.config import Config
-
 
 class ViewMode(Enum):
     FULL = 0
@@ -40,9 +38,8 @@ class MainUi:
         self.view_mode: ViewMode = ViewMode.FULL
 
     def next_row(self) -> int:
-        row = self.row
         self.row += 1
-        return row
+        return self.row
 
     def plugin_app(self, parent: tk.Widget) -> tk.Widget:
         self.frame = tk.Frame(parent)
@@ -51,13 +48,13 @@ class MainUi:
 
         frame = tk.Frame(self.frame)
         frame.columnconfigure(1, weight=1)
-        frame.grid(row=self.next_row(), column=0, sticky=tk.EW)
+        frame.grid(row=0, column=0, sticky=tk.EW)
 
         self.prev_btn = tk.Label(frame, image=self.icons['left_arrow'], cursor="hand2")
         self.prev_btn.bind("<Button-1>", partial(self.event, "prev"))
         self.prev_btn.grid(row=0, column=0, sticky=tk.W)
 
-        self.title = tk.Label(frame, text="", justify=tk.CENTER, anchor=tk.CENTER)
+        self.title = tk.Label(frame, text="Total", justify=tk.CENTER, anchor=tk.CENTER)
         self.title.grid(row=0, column=1, sticky=tk.EW)
 
         self.next_btn = tk.Label(frame, image=self.icons['right_arrow'], cursor="hand2")
@@ -68,18 +65,15 @@ class MainUi:
         self.view_btn.bind("<Button-1>", self.change_view)
         self.view_btn.grid(row=0, column=3, sticky=tk.E)
 
-        self.station = tk.Label(self.frame, text="Loading...", justify=tk.CENTER)
-        self.station.grid_configure(row=self.next_row(), column=0, sticky=tk.EW)
+        self.station = tk.Label(frame, text="Loading...", justify=tk.CENTER)
+        self.station.grid(row=1, column=0, columnspan=5, sticky=tk.EW)
 
-        self.total_label = tk.Label(self.frame, text="0 t to deliver", justify=tk.CENTER)
-        self.total_label.grid_configure(row=self.next_row(), column=0, sticky=tk.EW)
-
-        self.track_btn = tk.Button(self.frame, text="Track this construction", command=partial(self.event, "track", None))
-        self.track_btn.grid(row=self.next_row(), column=0, sticky=tk.EW, columnspan=5)
+        self.track_btn = tk.Button(frame, text="Track this construction", command=partial(self.event, "track", None))
+        self.track_btn.grid(row=2, column=0, sticky=tk.EW, columnspan=5)
 
         self.table_frame = tk.Frame(self.frame, highlightthickness=1)
         self.table_frame.columnconfigure(0, weight=1)
-        self.table_frame.grid(row=self.next_row(), column=0, sticky=tk.EW)
+        self.table_frame.grid(row=1, column=0, sticky=tk.W, columnspan=5)
 
         tk.Label(self.table_frame, text="Commodity").grid(row=0, column=0, sticky=tk.W)
         tk.Label(self.table_frame, text="Buy |").grid(row=0, column=1, sticky=tk.E)
@@ -100,6 +94,9 @@ class MainUi:
             for label in labels.values():
                 label.grid_remove()
             self.rows.append(labels)
+
+        self.total_label = tk.Label(frame, text="0 t to deliver", justify=tk.CENTER)
+        self.total_label.grid(row=2, column=0, columnspan=5, sticky=tk.EW)
 
         return self.frame
 
@@ -190,31 +187,20 @@ class MainUi:
 
     def set_station(self, value: str | None, color: str | None = None) -> None:
         if self.station and theme.current:
-            if Config.SHOW_STATION_NAME.get():
-                self.station['text'] = value
-                if color:
-                    self.station['fg'] = color
-                elif theme.current:
-                    self.station['fg'] = theme.current['foreground']
-                if not value:
-                    self.station.grid_remove()
-                else:
-                    self.station.grid()
-            else:
-                self.station.grid_remove()
+            self.station['text'] = value
+            if color:
+                self.station['fg'] = color
+            elif theme.current:
+                self.station['fg'] = theme.current['foreground']
 
     def set_total(self, cargo:int, maxcargo:int, color:str | None = None) -> None:
+        if maxcargo > 0:
+            flight = float(cargo)/float(maxcargo)
+        else:
+            flight = 0.0
         if self.total_label and theme.current:
-            if Config.SHOW_TOTALS.get():
-                if maxcargo > 0:
-                    flight = float(cargo)/float(maxcargo)
-                else:
-                    flight = 0.0
-                self.total_label['text'] = f"Remaining {flight:.1f} flights at {maxcargo} tons each, total {str(cargo)} t"
-                if color:
-                    self.total_label['fg'] = color
-                else:
-                    self.total_label['fg'] = theme.current['foreground']
-                self.total_label.grid()
+            self.total_label['text'] = f"Remaining {flight:.1f} flights at {maxcargo} tons each, total {str(cargo)} t"
+            if color:
+                self.total_label['fg'] = color
             else:
-                self.total_label.grid_remove()
+                self.total_label['fg'] = theme.current['foreground']
