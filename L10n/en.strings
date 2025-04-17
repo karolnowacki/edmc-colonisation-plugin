@@ -1,3 +1,4 @@
+/* UI labels and buttons */
 "Colonization:" = "Colonization:";
 "Total" = "Total";
 "Station" = "Station";
@@ -8,6 +9,11 @@
 "Cargo" = "Cargo";
 "Carrier" = "Carrier";
 "Buy" = "To Buy";
+"SortingMode.MARKET" = "Market";
+"SortingMode.CARRIER" = "Carrier";
+"SortingMode.ALPHABET" = "Alphabet";
+
+/* Construction sites replacement */
 "$EXT_PANEL_ColonisationShip" = "Colonization Ship";
 "Planetary Construction Site" = "Ground";
 "Orbital Construction Site" = "Station";
