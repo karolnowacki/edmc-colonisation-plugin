@@ -11,6 +11,13 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pylint
+    - name: Clone EDMC
+      uses: actions/checkout@v4
+      with:
+        repository: EDCD/EDMarketConnector
+        path: EDMC
+    - name: Set Environment
+      run: echo "PYTHONPATH=.:./EDMC" >> $GITHUB_ENV
     - name: Analysing the code with pylint
       run: |
         pylint $(git ls-files '*.py')
