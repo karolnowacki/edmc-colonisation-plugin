@@ -47,25 +47,23 @@ class MainUi:
         self.frame.grid(sticky=tk.EW)
 
         frame = tk.Frame(self.frame)
-        frame.columnconfigure(2, weight=1)
+        frame.columnconfigure(1, weight=1)
         frame.grid(row=0, column=0, sticky=tk.EW)
-
-        tk.Label(frame, text="Colonization:", anchor=tk.W).grid(row=0, column=0, sticky=tk.W)
 
         self.prev_btn = tk.Label(frame, image=self.icons['left_arrow'], cursor="hand2")
         self.prev_btn.bind("<Button-1>", partial(self.event, "prev"))
-        self.prev_btn.grid(row=0, column=1, sticky=tk.W)
+        self.prev_btn.grid(row=0, column=0, sticky=tk.W)
 
         self.title = tk.Label(frame, text="Total", justify=tk.CENTER, anchor=tk.CENTER)
-        self.title.grid(row=0, column=2, sticky=tk.EW)
+        self.title.grid(row=0, column=1, sticky=tk.EW)
 
         self.next_btn = tk.Label(frame, image=self.icons['right_arrow'], cursor="hand2")
         self.next_btn.bind("<Button-1>", partial(self.event, "next"))
-        self.next_btn.grid(row=0, column=3, sticky=tk.W)
+        self.next_btn.grid(row=0, column=2, sticky=tk.W)
 
         self.view_btn = tk.Label(frame, image=self.icons['view_close'], cursor="hand2")
         self.view_btn.bind("<Button-1>", self.change_view)
-        self.view_btn.grid(row=0, column=4, sticky=tk.E)
+        self.view_btn.grid(row=0, column=3, sticky=tk.E)
 
         self.station = tk.Label(frame, text="Loading...", justify=tk.CENTER)
         self.station.grid(row=1, column=0, columnspan=5, sticky=tk.EW)
