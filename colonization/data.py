@@ -20,11 +20,26 @@ class Commodity:
         self.market_ord: int = 0
         self.carrier_ord: int = 0
 
+
 class TableEntry:
-    def __init__(self, commodity:Commodity, needed:int, cargo:int, carrier:int, available:bool):
+    def __init__(self, commodity:Commodity, demand:int, cargo:int, carrier:int, available:bool):
         self.commodity = commodity
-        self.needed = needed
+        self.demand = demand
         self.cargo = cargo
         self.carrier = carrier
         self.available = available
 
+    def category(self):
+        return self.commodity.category
+
+    def unload(self) -> int:
+        result = self.demand
+        if result < 0:
+            result = 0
+        return result
+
+    def buy(self) -> int:
+        result = self.demand - self.cargo - self.carrier
+        if result < 0:
+            result = 0
+        return result

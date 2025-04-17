@@ -189,7 +189,7 @@ class ColonizationPlugin:
         for commodity, required in needed.items():
             table.append(TableEntry(
                 commodity=self.commodityMap[commodity],
-                needed=required.needed() if isinstance(required, ConstructionResource) else required,
+                demand=required.needed() if isinstance(required, ConstructionResource) else required,
                 cargo=self.cargo.get(commodity, 0),
                 carrier=self.carrier.get(commodity),
                 available=commodity in local_commodities
@@ -199,7 +199,7 @@ class ColonizationPlugin:
     def get_total_shopping_value(self) -> int:
         needed = self.currentConstruction.required if self.currentConstruction else self.get_total_shopping_list()
         value = 0
-        for commodity, required in needed.items():
+        for required in needed.values():
             value += required.needed() if isinstance(required, ConstructionResource) else required
         return value
 
@@ -237,6 +237,7 @@ class ColonizationPlugin:
 
     def update_language(self):
         self._load_commodity_sorting()
+        self.ui.reset_frame()
 
     def load(self) -> None:
         self.constructions = []
