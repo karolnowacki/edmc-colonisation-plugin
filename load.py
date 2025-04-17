@@ -29,7 +29,7 @@ def plugin_prefs(parent, cmdr, is_beta):
 
 def prefs_changed(cmdr, is_beta):
     config.set("colonization.ignoreFCUpdate", this.prefs.ignoreFCUpdate.get())
-    this.plugin.updateLanguage()
+    this.plugin.update_language()
     this.plugin.update_display()
 
 def capi_fleetcarrier(data):

@@ -219,6 +219,7 @@ class ColonizationPlugin:
 
     def update_language(self):
         self._load_commodity_sorting()
+        self.ui.reset_frame()
 
     def load(self) -> None:
         self.constructions = []
