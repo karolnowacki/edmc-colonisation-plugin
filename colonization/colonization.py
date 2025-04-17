@@ -5,29 +5,31 @@ import os
 from os import path
 from typing import Any, Optional
 
-from . import construction
-from .construction import Construction, ConstructionResource
-from .fleetcarrier import FleetCarrier
-from .ui import MainUi
-
 from EDMCLogging import get_main_logger
 from monitor import monitor
 from config import config
 from companion import CAPIData
 
-logger = get_main_logger()
+from . import construction
+from .construction import Construction, ConstructionResource
+from .fleetcarrier import FleetCarrier
+from .ui import MainUi
+from .config import Config
+from .data import Commodity, TableEntry, ptl
 
+logger = get_main_logger()
 
 class ColonizationPlugin:
 
     def __init__(self) -> None:
-        self.commodityMap: dict[str, str] = self.get_commodity_map()
+        self.commodityMap: dict[str, Commodity] = {}
         self.constructions: list[Construction] = []
         self.carrier: FleetCarrier = FleetCarrier()
         self.cargo: dict[str, int] = {}
         self.maxcargo: int = 0
         self.currentConstruction: Construction | None = None
         self.currentConstructionId: int | None = -1
+        self.pluginDir: str | None = None
         self.saveDir: str | None = None
         self.ui: MainUi | None = None
         self.dockedConstruction = False
@@ -36,10 +38,12 @@ class ColonizationPlugin:
         logger.debug("initialized")
 
     def plugin_start3(self, plugin_dir: str) -> None:
+        self.pluginDir = plugin_dir
         self.saveDir = path.abspath(path.join(plugin_dir, "../../colonization"))
-        print(self.saveDir)
         if not path.exists(self.saveDir):
             os.makedirs(self.saveDir)
+        self._load_commodity_map()
+        self._load_commodity_sorting()
         self.load()
 
     def cmdr_data(self, data: CAPIData, is_beta: bool) -> None:
@@ -134,21 +138,24 @@ class ColonizationPlugin:
 
     def update_display(self, event: Any = None) -> None:
         if self.ui:
+            is_total = False
             if self.currentConstruction:
-                self.ui.set_title(self.currentConstruction.get_short_name())
+                short_name = self.currentConstruction.get_short_name()
+                self.ui.set_title(short_name)
                 if self.currentConstructionId is None:
+                    self.ui.set_station(ptl("{} (not tracked)").format(short_name), color="#f00")
                     self.ui.set_station("This construction is not tracked", color="#f00")
                 elif self.dockedConstruction:
-                    self.ui.set_station("{} (docked)".format(self.currentConstruction.get_name()), 'green')
+                    self.ui.set_station(ptl("{} (docked)").format(short_name), 'green')
                 else:
-                    self.ui.set_station(self.currentConstruction.get_name())
+                    self.ui.set_station(short_name)
             else:
-                self.ui.set_title("TOTAL")
+                is_total = True
                 if len(self.constructions) == 0:
                     self.ui.set_title("")
                     self.ui.set_station("Dock to construction site to start tracking progress")
                 else:
-                    self.ui.set_title("TOTAL")
+                    self.ui.set_title(ptl("Total"))
                     self.ui.set_station("")
 
             self.ui.set_total(self.get_total_shopping_value(), self.maxcargo)
@@ -157,14 +164,16 @@ class ColonizationPlugin:
                 docked_to = "construction"
             if self.carrier.callSign and monitor.state['StationName'] == self.carrier.callSign:
                 docked_to = "carrier"
-            self.ui.set_table(self.get_table(), docked_to)
+            self.ui.set_table(self.get_table(), docked_to, is_total)
             if self.ui.track_btn and self.ui.total_label:
                 if self.dockedConstruction and self.currentConstructionId is None:
                     self.ui.track_btn.grid()
-                    self.ui.total_label.grid_remove()
+                    if Config.SHOW_TOTALS.get():
+                        self.ui.total_label.grid_remove()
                 else:
                     self.ui.track_btn.grid_remove()
-                    self.ui.total_label.grid()
+                    if Config.SHOW_TOTALS.get():
+                        self.ui.total_label.grid()
             if self.ui.prev_btn and self.ui.next_btn:
                 if self.dockedConstruction or len(self.constructions) == 0:
                     self.ui.prev_btn.grid_remove()
@@ -173,38 +182,62 @@ class ColonizationPlugin:
                     self.ui.prev_btn.grid()
                     self.ui.next_btn.grid()
 
-    def get_table(self) -> list[dict[str, Any]]:
+    def get_table(self) -> list[TableEntry]:
         needed = self.currentConstruction.required if self.currentConstruction else self.get_total_shopping_list()
-        table = []
+        table: list[TableEntry] = []
         local_commodities: list[str] = self.markets.get(self.currentMarketId, []) if self.currentMarketId else []
         for commodity, required in needed.items():
-            table.append({
-                'commodityName': self.commodityMap.get(commodity, commodity),
-                'needed': required.needed() if isinstance(required, ConstructionResource) else required,
-                'cargo': self.cargo.get(commodity, 0),
-                'carrier': self.carrier.get(commodity),
-                'available': commodity in local_commodities
-            })
+            table.append(TableEntry(
+                commodity=self.commodityMap[commodity],
+                demand=required.needed() if isinstance(required, ConstructionResource) else required,
+                cargo=self.cargo.get(commodity, 0),
+                carrier=self.carrier.get(commodity),
+                available=commodity in local_commodities
+            ))
         return table
 
     def get_total_shopping_value(self) -> int:
         needed = self.currentConstruction.required if self.currentConstruction else self.get_total_shopping_list()
         value = 0
-        for commodity, required in needed.items():
+        for required in needed.values():
             value += required.needed() if isinstance(required, ConstructionResource) else required
         return value
 
-    @classmethod
-    def get_commodity_map(cls) -> dict[str, str]:
-        mapping: dict[str, str] = {}
+    def _load_commodity_map(self) -> None:
         for f in ('commodity.csv', 'rare_commodity.csv'):
             if not (config.app_dir_path / 'FDevIDs' / f).is_file():
                 continue
             with open(config.app_dir_path / 'FDevIDs' / f, 'r') as csvfile:
                 reader = csv.DictReader(csvfile)
                 for row in reader:
-                    mapping[row['symbol'].lower()] = row['name']
-        return mapping
+                    symbol = row['symbol']
+                    self.commodityMap[symbol.lower()] = Commodity(symbol, row['category'], row['name'])
+
+    def _load_commodity_sorting(self) -> None:
+        language = config.get_str('language', default='en')
+        filePath = path.join(self.pluginDir, 'L10n', f"sorting-{language}.csv")
+        if not path.isfile(filePath):
+            filePath = path.join(self.pluginDir, 'L10n', "sorting-en.csv")
+        if path.isfile(filePath):
+            with open(filePath, mode='r', encoding='utf-8') as csvfile:
+                reader = csv.DictReader(csvfile)
+                category = ''
+                for row in reader:
+                    symbol = row['symbol'].strip()
+                    if symbol == '*':
+                        category = row['name'].strip()
+                    else:
+                        commodity = self.commodityMap.get(symbol.lower())
+                        if not commodity:
+                            commodity = Commodity(symbol, category, row['name'].strip())
+                            self.commodityMap[symbol.lower()] = commodity
+                        commodity.name = row['name'].strip()
+                        commodity.market_ord = int(row['market'].strip())
+                        commodity.carrier_ord = int(row['carrier'].strip())
+
+    def update_language(self):
+        self._load_commodity_sorting()
+        self.ui.reset_frame()
 
     def load(self) -> None:
         self.constructions = []

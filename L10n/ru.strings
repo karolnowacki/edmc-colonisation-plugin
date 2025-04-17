@@ -1,0 +1,51 @@
+/* UI labels and buttons */
+"Colonization:" = " ";
+"Loading..." = "Загрузка данных...";
+"Total" = "Итого все стройки";
+"Station" = "Станция";
+"Track this construction" = "Отслеживать строительство";
+"This construction is not tracked" = "Эта стройка не отслеживается";
+"{} (docked)" = "{} (пристыкован)";
+"{} (not tracked)" = "{} (не отслеживается)";
+"Commodity" = "Материалы";
+"Need" = "Нужно";
+"Cargo" = "Судно";
+"Carrier" = "Авиан.";
+"Buy" = "Купить";
+"SortingMode.MARKET" = "Станция";
+"SortingMode.CARRIER" = "Авианосец";
+"SortingMode.ALPHABET" = "Алфавит";
+
+/* Construction sites replacement */
+"$EXT_PANEL_ColonisationShip" = "Колонизационный корабль";
+"Planetary Construction Site" = "Поселение";
+"Orbital Construction Site" = "Станция";
+
+/* Commodity categories */
+"Chemicals" = "Химикаты";
+"Consumer Items" = "Потребительские товары";
+"Foods" = "Продукты питания";
+"Industrial Materials" = "Промышленные материалы";
+"Legal Drugs" = "Легальные психоактивные вещества";
+"Machinery" = "Машинное оборудование";
+"Medicines" = "Лекарства";
+"Metals" = "Металлы";
+"Minerals" = "Минералы";
+"Salvage" = "Спасенное имущество";
+"Slavery" = "Рабы";
+"Technology" = "Технологии";
+"Textiles" = "Текстиль";
+"Waste" = "Отходы";
+"Weapons" = "Оружие";
+"Others Commodities" = "Остальные товары";
+
+/* Plugin settings */
+"Fleet carrier call sign:" = "Авианосец:";
+"Fleet carrier last update:" = "Время обновления Авианосца:";
+"Load FC data" = "Загрузить данные Авианосца";
+"Ignore event based cAPI Fleet Carrier update" = "Игнорировать события cAPI обновления данных Авианосца";
+"Show commodity categories" = "Показывать категории товаров";
+"Collapsable commodity categories" = "Разрешить сворачивать категории товаров";
+"Commodity rows:" = "Строк в таблице товаров";
+"List of tracked construction sites" = "Отслеживаемые стройки";
+"Remove from tracking" = "Не отслеживать";
