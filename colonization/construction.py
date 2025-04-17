@@ -1,8 +1,6 @@
 import json
 from typing import Any, Optional
 
-from .data import ptl
-
 from EDMCLogging import get_main_logger
 
 logger = get_main_logger()
