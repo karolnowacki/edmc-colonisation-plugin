@@ -9,33 +9,34 @@ class FleetCarrier:
 
     def __init__(self) -> None:
         self.cargo: dict[str, int] = {}
-        self.lastSync: str | None = None
-        self.callSign: str | None = None
-        self.filePath: str | None = None
-        self.autoSave: bool = False
+        self.last_sync: str | None = None
+        self.call_sign: str | None = None
+        self.file_path: str | None = None
+        self.auto_save: bool = False
 
     def load(self, file_path: str, auto_save: bool = True) -> None:
-        self.filePath = file_path
-        self.autoSave = auto_save
+        self.file_path = file_path
+        self.auto_save = auto_save
         if path.isfile(file_path):
-            data = json.load(open(file_path, 'r', encoding='utf-8'))
+            with open(file_path, 'r', encoding='utf-8') as file:
+                data = json.load(file)
             self.cargo = data.get('cargo', {})
-            self.lastSync = data.get('lastSync', None)
-            self.callSign = data.get('callSign', None)
+            self.last_sync = data.get('lastSync', None)
+            self.call_sign = data.get('callSign', None)
 
     def save(self, file_path: str | None = None) -> None:
-        if file_path is None and self.autoSave:
-            file_path = self.filePath
+        if file_path is None and self.auto_save:
+            file_path = self.file_path
         if file_path is None:
             return
         with open(file_path, 'w', encoding='utf-8') as file:
             json.dump(self, file, ensure_ascii=False, indent=4, cls=FleetCarrierEncoder, sort_keys=True)
 
     def sync_data(self, data: CAPIData) -> Self | None:
-        self.callSign = data['name']['callsign']
-        if not self.callSign:
+        self.call_sign = data['name']['callsign']
+        if not self.call_sign:
             return None
-        self.lastSync = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat()
+        self.last_sync = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat()
 
         self.cargo = {}
         for c in data['cargo']:

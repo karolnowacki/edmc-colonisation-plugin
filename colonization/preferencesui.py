@@ -40,16 +40,16 @@ class PreferencesUi:
         frame = ttk.Frame(self.frame, style='nb.TFrame')
         frame.grid(row=self.row, sticky=tk.EW, padx=self.PAD_X, pady=self.PAD_Y)
         nb.Label(frame, text=ptl("Fleet carrier call sign:")).grid(row=0, column=0)
-        self.fc_callsign = nb.Label(frame, text=self.plugin.carrier.callSign)
+        self.fc_callsign = nb.Label(frame, text=self.plugin.carrier.call_sign)
         self.fc_callsign.grid(row=0, column=1)
         nb.Label(frame, text=ptl("Fleet carrier last update:")).grid(row=1, column=0)
-        self.fc_last_update = nb.Label(frame, text=self.plugin.carrier.lastSync)
+        self.fc_last_update = nb.Label(frame, text=self.plugin.carrier.last_sync)
         self.fc_last_update.grid(row=1, column=1)
         btn = nb.Button(frame, text=ptl("Load FC data"), command=self.call_capi_fc)
         btn.grid(row=3, columnspan=2, sticky=tk.EW, pady=5)
         self.ignore_fc_update = Config.IGNORE_FC_UPDATE.tk_var()
-        nb.Checkbutton(frame, text=ptl("Ignore event based cAPI Fleet Carrier update"), variable=self.ignore_fc_update).grid(
-            row=4, columnspan=2, sticky=tk.W)
+        nb.Checkbutton(frame, text=ptl("Ignore event based cAPI Fleet Carrier update"),
+                       variable=self.ignore_fc_update).grid(row=4, columnspan=2, sticky=tk.W)
 
         ttk.Separator(self.frame, orient=tk.HORIZONTAL).grid(row=self.next_row(), sticky=tk.EW, padx=self.PAD_X)
 
@@ -62,19 +62,20 @@ class PreferencesUi:
             row=self.next_row(), sticky=tk.W, padx=self.PAD_X)
 
         self.var_categories = Config.CATEGORIES.tk_var()
-        nb.Checkbutton(frame, text=ptl("Show commodity categories"), variable=self.var_categories, command=self._on_categories_change).grid(
-            row=self.next_row(), sticky=tk.W, padx=self.PAD_X)
+        nb.Checkbutton(frame, text=ptl("Show commodity categories"), variable=self.var_categories,
+                       command=self._on_categories_change).grid(row=self.next_row(), sticky=tk.W, padx=self.PAD_X)
 
         self.var_collapsable = Config.COLLAPSABLE.tk_var()
-        nb.Checkbutton(frame, text=ptl("Collapsable commodity categories"), variable=self.var_collapsable, command=self._on_collapsable_change).grid(
-            row=self.next_row(), sticky=tk.W, padx=self.PAD_X)
+        nb.Checkbutton(frame, text=ptl("Collapsable commodity categories"), variable=self.var_collapsable,
+                       command=self._on_collapsable_change).grid(row=self.next_row(), sticky=tk.W, padx=self.PAD_X)
 
         nb.Label(frame, text=ptl("Commodity rows:")).grid(row=self.row, column=0, sticky=tk.W)
         self.var_rows = Config.ROWS.tk_string_var()
-        nb.OptionMenu(frame, self.var_rows, self.var_rows.get(), *['10', '15','20','25','30','35'], command=self._on_rows_change).grid(
-            row=self.next_row(), column=1, padx=1, pady=1, sticky=tk.W)
+        nb.OptionMenu(frame, self.var_rows, self.var_rows.get(), *['10', '15','20','25','30','35'],
+                      command=self._on_rows_change).grid(row=self.next_row(), column=1, padx=1, pady=1, sticky=tk.W)
 
-        ttk.Separator(self.frame, orient=tk.HORIZONTAL).grid(row=self.next_row(), sticky=tk.EW, padx=self.PAD_X, pady=(self.PAD_Y, 0))
+        ttk.Separator(self.frame, orient=tk.HORIZONTAL).grid(row=self.next_row(),
+                                                             sticky=tk.EW, padx=self.PAD_X, pady=(self.PAD_Y, 0))
 
         self.construction_list = ttk.Frame(self.frame, style='nb.TFrame')
         self.construction_list.grid(row=self.next_row(), column=0, sticky=tk.EW, padx=self.PAD_X, pady=self.PAD_Y)
@@ -117,23 +118,22 @@ class PreferencesUi:
 
     def update_fc(self, carrier: FleetCarrier) -> None:
         if self.fc_callsign and self.fc_last_update:
-            self.fc_callsign['text'] = str(carrier.callSign)
-            self.fc_last_update['text'] = str(carrier.lastSync)
+            self.fc_callsign['text'] = str(carrier.call_sign)
+            self.fc_last_update['text'] = str(carrier.last_sync)
 
     def call_capi_fc(self) -> None:
         if session.state == Session.STATE_OK:
             if self.fc_last_update:
                 self.fc_last_update['text'] = "Updating..."
 
-            #
             carrier = session.requests_session.get(
                 session.capi_host_for_galaxy() + session.FRONTIER_CAPI_PATH_FLEETCARRIER)
             data = carrier.json()
             self.plugin.capi_fleetcarrier(data)
             if self.fc_callsign and self.fc_last_update:
-                if self.plugin.carrier and self.plugin.carrier.callSign:
-                    self.fc_callsign['text'] = str(self.plugin.carrier.callSign)
-                    self.fc_last_update['text'] = str(self.plugin.carrier.lastSync)
+                if self.plugin.carrier and self.plugin.carrier.call_sign:
+                    self.fc_callsign['text'] = str(self.plugin.carrier.call_sign)
+                    self.fc_last_update['text'] = str(self.plugin.carrier.last_sync)
                 else:
                     self.fc_callsign['text'] = ""
                     self.fc_last_update['text'] = "Missing Fleet Carrier data"
@@ -155,23 +155,21 @@ class PreferencesUi:
     def _on_categories_change(self) -> None:
         value: bool = self.var_categories.get()
         if value != Config.CATEGORIES.get():
-            self.plugin.ui.CATEGORIES = value
+            self.plugin.ui.categories_conf = value
             Config.CATEGORIES.set(value)
             self.plugin.update_display()
 
     def _on_collapsable_change(self) -> None:
         value: bool = self.var_collapsable.get()
         if value != Config.COLLAPSABLE.get():
-            self.plugin.ui.COLLAPSABLE = value
+            self.plugin.ui.collapsable_conf = value
             Config.COLLAPSABLE.set(value)
             self.plugin.update_display()
 
     def _on_rows_change(self, *_) -> None:
         value: int = int(self.var_rows.get())
         if value != Config.ROWS.get():
-            self.plugin.ui.ROWS = value
+            self.plugin.ui.rows_conf = value
             Config.ROWS.set(value)
             self.plugin.ui.reset_frame()
             self.plugin.update_display()
-
-Config.ROWS.set(25)

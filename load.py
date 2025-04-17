@@ -1,6 +1,6 @@
 import sys
-from colonization.config import Config
 
+from colonization.config import Config
 from colonization.colonization import ColonizationPlugin
 from colonization.ui import MainUi
 from colonization.preferencesui import PreferencesUi
