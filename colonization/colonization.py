@@ -5,19 +5,19 @@ import os
 from os import path
 from typing import Any, Optional
 
-from .data import Commodity, TableEntry, ptl
-from . import construction
-from .construction import Construction, ConstructionResource
-from .fleetcarrier import FleetCarrier
-from .ui import MainUi
-
 from EDMCLogging import get_main_logger
 from monitor import monitor
 from config import config
 from companion import CAPIData
 
-logger = get_main_logger()
+from . import construction
+from .construction import Construction, ConstructionResource
+from .fleetcarrier import FleetCarrier
+from .ui import MainUi
+from .config import Config
+from .data import Commodity, TableEntry, ptl
 
+logger = get_main_logger()
 
 class ColonizationPlugin:
 
@@ -26,6 +26,7 @@ class ColonizationPlugin:
         self.constructions: list[Construction] = []
         self.carrier: FleetCarrier = FleetCarrier()
         self.cargo: dict[str, int] = {}
+        self.maxcargo: int = 0
         self.currentConstruction: Construction | None = None
         self.currentConstructionId: int | None = -1
         self.pluginDir: str | None = None
@@ -78,6 +79,9 @@ class ColonizationPlugin:
                     self.carrier.add(t['Type'], t['Count'])
             self.update_display()
 
+        if entry['event'] == "Loadout" and entry["Ship"] and entry["CargoCapacity"]:
+            self.maxcargo = int(entry["CargoCapacity"])
+
         if entry['event'] == "ColonisationContribution":
             delivery = {}
             for c in entry['Contributions']:
@@ -109,11 +113,13 @@ class ColonizationPlugin:
 
         if entry['event'] == "Cargo":
             self.cargo = state['Cargo'].copy()
+            self.maxcargo = max(int(entry.get("Count", 0)), self.maxcargo)
             self.update_display()
             self.save()
 
         if entry['event'] == 'StartUp':
             self.cargo = state['Cargo'].copy()
+            self.maxcargo = max(int(entry.get("Count", 0)), self.maxcargo)
             self.set_docked(state)
 
         if entry['event'] == 'Docked':
@@ -152,17 +158,22 @@ class ColonizationPlugin:
                     self.ui.set_title(ptl("Total"))
                     self.ui.set_station("")
 
+            self.ui.set_total(self.get_total_shopping_value(), self.maxcargo)
             docked_to: Optional[str] = None
             if self.dockedConstruction:
                 docked_to = "construction"
             if self.carrier.callSign and monitor.state['StationName'] == self.carrier.callSign:
                 docked_to = "carrier"
             self.ui.set_table(self.get_table(), docked_to, is_total)
-            if self.ui.track_btn:
+            if self.ui.track_btn and self.ui.total_label:
                 if self.dockedConstruction and self.currentConstructionId is None:
                     self.ui.track_btn.grid()
+                    if Config.SHOW_TOTALS.get():
+                        self.ui.total_label.grid_remove()
                 else:
                     self.ui.track_btn.grid_remove()
+                    if Config.SHOW_TOTALS.get():
+                        self.ui.total_label.grid()
             if self.ui.prev_btn and self.ui.next_btn:
                 if self.dockedConstruction or len(self.constructions) == 0:
                     self.ui.prev_btn.grid_remove()
@@ -184,6 +195,13 @@ class ColonizationPlugin:
                 available=commodity in local_commodities
             ))
         return table
+
+    def get_total_shopping_value(self) -> int:
+        needed = self.currentConstruction.required if self.currentConstruction else self.get_total_shopping_list()
+        value = 0
+        for commodity, required in needed.items():
+            value += required.needed() if isinstance(required, ConstructionResource) else required
+        return value
 
     def _load_commodity_map(self) -> None:
         for f in ('commodity.csv', 'rare_commodity.csv'):
