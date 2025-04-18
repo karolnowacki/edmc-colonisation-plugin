@@ -494,7 +494,7 @@ class CanvasTableView(TableView):
                 self.COLUMN_START.append(x)
                 x += w
             x += self.PAD_X
-            self.TABLE_WIDTH = x  # pylint: disable=W0103
+            self.TABLE_WIDTH = x  # pylint: disable=C0103
 
         self.frame = tk.Frame(parent, pady=3, padx=3)
         self.frame.grid(sticky=tk.NSEW)
