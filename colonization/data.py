@@ -38,13 +38,8 @@ class TableEntry:
         return self.commodity.category
 
     def unload(self) -> int:
-        result = self.demand
-        if result < 0:
-            result = 0
-        return result
+        return max(self.demand, 0)
 
     def buy(self) -> int:
         result = self.demand - self.cargo - self.carrier
-        if result < 0:
-            result = 0
-        return result
+        return max(result, 0)

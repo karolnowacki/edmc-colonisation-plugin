@@ -2,10 +2,10 @@ import tkinter as tk
 from os import path
 from functools import partial
 from enum import Enum
-from typing import Any, Callable, Optional, Self
+from typing import Callable, Optional, Self
+from collections import deque
 
 from theme import theme
-from collections import deque
 
 from .config import Config
 from .data import Commodity, TableEntry, ptl
@@ -27,34 +27,34 @@ class ViewMode(Enum):
 class CollapseMode(Enum):
     EXPANDED = 0
     COLLAPSED = 1
-    LEADING = 2     # always collapsed top row
-    TRAILING = 3    # always collapsed bottom row
+    LEADING = 2  # always collapsed top row
+    TRAILING = 3  # always collapsed bottom row
 
     def __bool__(self):
         return self != CollapseMode.EXPANDED
 
 
 class CommodityCategory:
-    def __init__(self, symbol:str, mode:CollapseMode = CollapseMode.EXPANDED):
+    def __init__(self, symbol: str, mode: CollapseMode = CollapseMode.EXPANDED):
         self.symbol = symbol.strip() if symbol else ''
-        self.rows: list[TableEntry|CommodityCategory] = []
+        self.rows: list[TableEntry | CommodityCategory] = []
         self.collapsed: CollapseMode = mode
 
-    def unload(self):
-        return sum([i.unload() for i in self.rows])
+    def unload(self) -> int:
+        return sum(i.unload() for i in self.rows)
 
-    def buy(self):
-        return sum([i.buy() for i in self.rows])
+    def buy(self) -> int:
+        return sum(i.buy() for i in self.rows)
 
-    def clear(self):
+    def clear(self) -> None:
         self.rows = []
 
 
 class MainUi:
-    ROWS = Config.ROWS.get()
-    CATEGORIES = Config.CATEGORIES.get()
-    COLLAPSABLE = Config.COLLAPSABLE.get()
-    SCROLLABLE = Config.SCROLLABLE.get()
+    max_rows_conf = Config.ROWS.get()
+    categories_conf = Config.CATEGORIES.get()
+    collapsable_conf = Config.COLLAPSABLE.get()
+    scrollable_conf = Config.SCROLLABLE.get()
     iconDir = path.join(path.dirname(__file__), "../icons")
 
     def __init__(self) -> None:
@@ -68,7 +68,7 @@ class MainUi:
             'view_sort': tk.PhotoImage(file=path.join(self.iconDir, "view_sort.gif")),
             'resize': tk.PhotoImage(file=path.join(self.iconDir, "resize.gif")),
         }
-        self.rows: Optional[list] = None
+        self.rows_conf: Optional[list] = None
         self.subscribers: dict[str, Callable[[tk.Event | None], None]] = {}
         self.title: Optional[tk.Label] = None
         self.station: Optional[tk.Label] = None
@@ -83,9 +83,11 @@ class MainUi:
         self.sorting_mode: SortingMode = SortingMode.MARKET
         self.top_rows: int = 0
         self.bottom_rows: int = 0
-        self.categories: dict[str,CommodityCategory] = {}
+        self.categories: dict[str, CommodityCategory] = {}
         self.commodity_table: list[TableEntry] = []
         self.table_view: Optional[TableView] = None
+        self.view_mode_var = tk.StringVar()
+        self.sorting_var = tk.StringVar()
 
     def next_row(self) -> int:
         row = self.row
@@ -96,8 +98,6 @@ class MainUi:
         self.frame = tk.Frame(parent)
         self.frame.columnconfigure(0, weight=1)
         self.frame.grid(sticky=tk.EW)
-        self.view_mode_var = tk.StringVar()
-        self.sorting_var = tk.StringVar()
         self.reset_frame()
         return self.frame
 
@@ -143,14 +143,15 @@ class MainUi:
         self.total_label = tk.Label(self.frame, text=ptl("nothing to deliver"), justify=tk.CENTER)
         self.total_label.grid_configure(row=self.next_row(), column=0, sticky=tk.EW)
 
-        self.track_btn = tk.Button(self.frame, text=ptl("Track this construction"), command=partial(self.event, "track", None))
+        self.track_btn = tk.Button(self.frame, text=ptl("Track this construction"),
+                                   command=partial(self.event, "track", None))
         self.track_btn.grid(row=self.next_row(), column=0, sticky=tk.EW, columnspan=5)
 
         self.table_frame = tk.Frame(self.frame, highlightthickness=1)
         self.table_frame.columnconfigure(0, weight=1)
         self.table_frame.grid(row=self.next_row(), column=0, sticky=tk.EW)
 
-        if self.SCROLLABLE:
+        if self.scrollable_conf:
             self.table_view = CanvasTableView(self, self.table_frame)
         else:
             self.table_view = FrameTableView(self, self.table_frame)
@@ -195,7 +196,7 @@ class MainUi:
         if self.title:
             self.title['text'] = text
 
-    def _toggle_category(self, event, c:str):
+    def _toggle_category(self, event, c: str):  # pylint: disable=W0613
         cc = self.categories[c]
         if cc.collapsed:
             cc.collapsed = CollapseMode.EXPANDED
@@ -203,29 +204,25 @@ class MainUi:
             cc.collapsed = CollapseMode.COLLAPSED
         self.event('update', None)
 
-    def _incr_top_rows(self, event, rows: int):
-        rows = self.bottom_rows
-        page_size = self.ROWS - 3
+    def _incr_top_rows(self, event, rows: int):  # pylint: disable=W0613
+        page_size = self.max_rows_conf - 3
         if self.top_rows == 0:
             page_size += 1
-        if rows > page_size:
-            rows = page_size
+        rows = min(self.bottom_rows, page_size)
         self.top_rows += rows
         self.event('update', None)
 
-    def _decr_top_rows(self, event, rows: int):
-        rows = self.top_rows
-        page_size = self.ROWS - 3
-        if rows > page_size:
-            rows = page_size
+    def _decr_top_rows(self, event, rows: int):  # pylint: disable=W0613
+        page_size = self.max_rows_conf - 3
+        rows = min(self.top_rows, page_size)
         self.top_rows -= rows
         if self.top_rows <= 1:
             self.top_rows = 0
         self.event('update', None)
 
     def _show_category(self, row: int, cc: CommodityCategory):
-        if not self.SCROLLABLE and row >= self.ROWS:
-            row = self.ROWS-1
+        if not self.scrollable_conf and row >= self.max_rows_conf:
+            row = self.max_rows_conf-1
 
         fg_color = theme.current['highlight'] if theme.current else 'blue'
         self.table_view.fg(fg_color)
@@ -236,7 +233,7 @@ class MainUi:
         elif cc.collapsed == CollapseMode.TRAILING:
             self.table_view.draw_text(row, 'name', '▼ ({}) {}'.format(len(cc.rows), ptl(cc.symbol)), crop=True)
             self.table_view.bind_action(row, lambda e,cnt=len(cc.rows): self._incr_top_rows(e,cnt))
-        elif self.COLLAPSABLE and not self.SCROLLABLE:
+        elif self.collapsable_conf and not self.scrollable_conf:
             if cc.collapsed:
                 self.table_view.draw_text(row, 'name', '▶ ({}) {}'.format(len(cc.rows), ptl(cc.symbol)), crop=True)
             else:
@@ -254,7 +251,7 @@ class MainUi:
             self.table_view.draw_text(row, 'demand', None)
             self.table_view.draw_text(row, 'buy', None)
 
-    def _show_commodity(self, row: int, i:TableEntry):
+    def _show_commodity(self, row: int, i: TableEntry):
         c: Commodity = i.commodity
 
         fg_color = theme.current['foreground'] if theme.current else 'black'
@@ -282,12 +279,12 @@ class MainUi:
             table.sort(key=lambda c: c.commodity.name)
 
         # prepare a list of rows (display_list)
-        display_list: deque[TableEntry|CommodityCategory] = deque()
-        show_categories = self.CATEGORIES and self.sorting_mode == SortingMode.MARKET
+        display_list: deque[TableEntry | CommodityCategory] = deque()
+        show_categories = self.categories_conf and self.sorting_mode == SortingMode.MARKET
         if show_categories:
             for cc in self.categories.values():
                 cc.clear()
-        cc: CommodityCategory|None = None
+        cc: CommodityCategory | None = None
         for i in table:
             if not i or i.demand <= 0:
                 continue
@@ -308,24 +305,24 @@ class MainUi:
                         cc = CommodityCategory(i.category())
                         self.categories[cc.symbol] = cc
                     display_list.append(cc)
-            if self.COLLAPSABLE and not self.SCROLLABLE and cc and cc.collapsed:
+            if self.collapsable_conf and not self.scrollable_conf and cc and cc.collapsed:
                 cc.rows.append(i)
             else:
                 display_list.append(i)
-        if self.SCROLLABLE:
+        if self.scrollable_conf:
             self.top_rows = 0
         # collapse first rows into 'others'
-        if self.top_rows > 0 and len(display_list) > self.ROWS:
+        if self.top_rows > 0 and len(display_list) > self.max_rows_conf:
             cc_others = CommodityCategory("Others Commodities", CollapseMode.LEADING)
-            while len(cc_others.rows) < self.top_rows and len(display_list) > self.ROWS-1:
+            while len(cc_others.rows) < self.top_rows and len(display_list) > self.max_rows_conf - 1:
                 cc_others.rows.append(display_list.popleft())
             display_list.appendleft(cc_others)
             self.top_rows = len(cc_others.rows)
         # collapse last rows into 'others'
         self.bottom_rows = 0
-        if not self.SCROLLABLE and len(display_list) > self.ROWS:
+        if not self.scrollable_conf and len(display_list) > self.max_rows_conf:
             cc_others = CommodityCategory("Others Commodities", CollapseMode.TRAILING)
-            while len(display_list) > self.ROWS-1:
+            while len(display_list) > self.max_rows_conf - 1:
                 cc_others.rows.append(display_list.pop())
             display_list.append(cc_others)
             self.bottom_rows = len(cc_others.rows)
@@ -356,13 +353,13 @@ class MainUi:
             else:
                 self.station.grid_remove()
 
-    def set_total(self, cargo:int, max_cargo:int, color:str | None = None) -> None:
-        if max_cargo <= 0:
-            max_cargo = 784
+    def set_total(self, cargo: int, maxcargo: int, color: str | None = None) -> None:
+        if maxcargo <= 0:
+            maxcargo = 784
         if self.total_label and theme.current:
             if Config.SHOW_TOTALS.get():
-                flight = float(cargo)/float(max_cargo)
-                self.total_label['text'] = ptl("Remaining {0:.1f} flights at {1} tons each, total {2} t").format(flight, max_cargo, cargo)
+                flight = float(cargo)/float(maxcargo)
+                self.total_label['text'] = ptl("Remaining {0:.1f} flights at {1} tons each, total {2} t").format(flight, maxcargo, cargo)
                 if color:
                     self.total_label['fg'] = color
                 else:
@@ -417,7 +414,7 @@ class FrameTableView(TableView):
         tk.Label(self.parent_frame, text=ptl("Cargo"), width=4).grid(row=0, column=4, sticky=tk.E)
 
         self.rows = []
-        for i in range(self.main_ui.ROWS):
+        for i in range(self.main_ui.max_rows_conf):
             self.parent_frame.grid_rowconfigure(i+1, pad=0)
             labels = {
                 'name': tk.Label(self.parent_frame, anchor=tk.W, justify=tk.LEFT, pady=0, width=22),

@@ -1,14 +1,13 @@
+
 import json
 from typing import Any, Optional
-
-from .data import ptl
 
 from EDMCLogging import get_main_logger
 
 logger = get_main_logger()
 
-
 class ConstructionResource:
+
     def __init__(self, commodity: str, required: int, provided: int, payment: int) -> None:
         self.commodity: str = commodity
         self.required: int = required
