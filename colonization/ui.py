@@ -258,11 +258,11 @@ class MainUi:
         fg_name_color = fg_color if i.buy() <= 0 and not i.available else '#FFF'
         self.table_view.fg(fg_color)
 
-        self.table_view.draw_text(row, 'name', c.name, crop=True)
-        self.table_view.draw_text(row, 'demand', i.unload())
-        self.table_view.draw_text(row, 'cargo', i.cargo)
-        self.table_view.draw_text(row, 'carrier', i.carrier)
-        self.table_view.draw_text(row, 'buy', i.buy())
+        self.table_view.fg(fg_name_color).draw_text(row, 'name', c.name, crop=True)
+        self.table_view.fg(fg_color).draw_text(row, 'demand', i.unload())
+        self.table_view.fg(fg_color).draw_text(row, 'cargo', i.cargo)
+        self.table_view.fg(fg_color).draw_text(row, 'carrier', i.carrier)
+        self.table_view.fg(fg_color).draw_text(row, 'buy', i.buy())
 
     def set_table(self, table: list[TableEntry], docked):
         self.commodity_table = table
@@ -461,8 +461,7 @@ class FrameTableView(TableView):
         self.rows[row][cname]['text'] = text
         self.rows[row][cname]['fg'] = self._fg
         self.rows[row][cname].grid(row=row+1, column=col)
-        if row > self.row:
-            self.row = row
+        self.row = max(self.row, row)
 
     def bind_action(self, row: int, action: Callable) -> Self:
         if row < len(self.rows):
@@ -473,7 +472,7 @@ class FrameTableView(TableView):
 class CanvasTableView(TableView):
     PAD_X = 5
     PAD_Y = 5
-    WIDTH = 350
+    TABLE_WIDTH = 350
     COLUMN_WIDTH = [145, 50, 50, 50, 45]
     COLUMN_START = []
     ROW_HEIGHT = 16
@@ -495,7 +494,7 @@ class CanvasTableView(TableView):
                 self.COLUMN_START.append(x)
                 x += w
             x += self.PAD_X
-            self.WIDTH = x
+            self.TABLE_WIDTH = x  # pylint: disable=W0103
 
         self.frame = tk.Frame(parent, pady=3, padx=3)
         self.frame.grid(sticky=tk.NSEW)
@@ -507,7 +506,8 @@ class CanvasTableView(TableView):
         self.reset()
 
     def reset(self):
-        self.canvas = tk.Canvas(self.frame, width=self.WIDTH, height=200, highlightthickness=0, scrollregion=(0,0,self.WIDTH,1000))
+        self.canvas = tk.Canvas(self.frame, width=self.TABLE_WIDTH, height=200, highlightthickness=0,
+                                scrollregion=(0, 0, self.TABLE_WIDTH, 1000))
         self.canvas.pack()
         frame = tk.Frame(self.frame)
         frame.pack(side=tk.RIGHT, fill=tk.Y)
@@ -535,10 +535,7 @@ class CanvasTableView(TableView):
         if self.resizing:
             delta = self.resizing_y_start - event.y_root
             height = self.resizing_h_start - delta
-            if height < 100:
-                height = 100
-            if height > 400:
-                height = 400
+            height = min(max(height, 100), 400)
             self.canvas.config(height=height)
 
     def draw_start(self):
@@ -551,8 +548,7 @@ class CanvasTableView(TableView):
         self.draw_text(-1, 4, ptl("Cargo"))
 
     def draw_finish(self):
-        self.canvas.configure(scrollregion=(0, 0, self.WIDTH, self.PAD_Y*2 + (self.row+1)*self.ROW_HEIGHT))
-        pass
+        self.canvas.configure(scrollregion=(0, 0, self.TABLE_WIDTH, self.PAD_Y * 2 + (self.row + 1) * self.ROW_HEIGHT))
 
     def draw_text(self, row: int, col: int|str, text: str|int|None=None, *, crop=False) -> Self:
         row += 1  # first row is table labels
@@ -583,8 +579,7 @@ class CanvasTableView(TableView):
         elif col > 0:
             x += self.COLUMN_WIDTH[col]
         self.canvas.create_text(x, y, text=text, fill=self._fg, **attr)
-        if self.row < row:
-            self.row = row
+        self.row = max(self.row, row)
 
     def bind_action(self, row: int, action: Callable) -> Self:   # pylint: disable=W0613
         # not implemented

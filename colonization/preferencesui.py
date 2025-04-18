@@ -30,6 +30,7 @@ class PreferencesUi:
         self.show_totals: Optional[tk.Variable] = None
         self.var_categories: Optional[tk.Variable] | None = None
         self.var_collapsable: Optional[tk.Variable] | None = None
+        self.var_scrollable: Optional[tk.Variable] | None = None
         self.var_rows: Optional[tk.Variable] | None = None
 
     def plugin_prefs(self, parent: ttk.Notebook, cmdr: str, is_beta: bool) -> nb.Frame:  # pylint: disable=W0613
@@ -70,8 +71,8 @@ class PreferencesUi:
                        command=self._on_collapsable_change).grid(row=9, sticky=tk.W)
 
         self.var_scrollable = Config.SCROLLABLE.tk_var()
-        nb.Checkbutton(frame, text=ptl("Scrollable commodity table"), variable=self.var_scrollable, command=self._on_scrollable_change).grid(
-            row=10, sticky=tk.W)
+        nb.Checkbutton(frame, text=ptl("Scrollable commodity table"), variable=self.var_scrollable,
+                       command=self._on_scrollable_change).grid(row=10, sticky=tk.W)
 
         nb.Label(frame, text=ptl("Commodity rows:")).grid(row=11, column=0, sticky=tk.W)
         self.var_rows = Config.ROWS.tk_string_var()

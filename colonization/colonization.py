@@ -147,16 +147,17 @@ class ColonizationPlugin:
         if journal_dir is None or journal_dir == '':
             journal_dir = config.default_journal_dir
         file_path = os.path.join(journal_dir, 'Market.json')
-        content = json.load(open(file_path, 'r', encoding='utf-8'))
-        items: list[Mapping[str, Any]] = content.get('Items') or []
-        market: list[str] = []
-        for i in items:
-            if int(i["Stock"]) <= 0:
-                continue
-            comm = Commodity.ID_TO_COMMODITY_MAP.get(int(i["id"]))
-            if comm:
-                market.append(comm.symbol.lower())
-        self.markets[content["MarketID"]] = market
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = json.load(f)
+            items: list[Mapping[str, Any]] = content.get('Items') or []
+            market: list[str] = []
+            for i in items:
+                if int(i["Stock"]) <= 0:
+                    continue
+                comm = Commodity.ID_TO_COMMODITY_MAP.get(int(i["id"]))
+                if comm:
+                    market.append(comm.symbol.lower())
+            self.markets[content["MarketID"]] = market
 
     def update_display(self, event: Any = None) -> None:
         # pylint: disable=W0613,R0912
@@ -231,9 +232,9 @@ class ColonizationPlugin:
                 reader = csv.DictReader(csvfile)
                 for row in reader:
                     symbol = row['symbol']
-                    id = int(row['id'])
+                    comm_id = int(row['id'])
                     comm = Commodity(symbol, row['category'], row['name'])
-                    Commodity.ID_TO_COMMODITY_MAP[id] = comm
+                    Commodity.ID_TO_COMMODITY_MAP[comm_id] = comm
                     self.commodity_map[symbol.lower()] = comm
         if not Commodity.ID_TO_COMMODITY_MAP.get(129031238):
             comm = Commodity('Steel', 'Metals', 'Steel')
