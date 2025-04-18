@@ -51,28 +51,32 @@ class PreferencesUi:
         nb.Checkbutton(frame, text=ptl("Ignore event based cAPI Fleet Carrier update"), variable=self.ignore_fc_update).grid(
             row=4, columnspan=2, sticky=tk.W)
 
-        ttk.Separator(self.frame, orient=tk.HORIZONTAL).grid(row=self.next_row(), sticky=tk.EW, padx=self.PAD_X)
+        ttk.Separator(frame, orient=tk.HORIZONTAL).grid(row=5, sticky=tk.EW)
 
         self.show_station_name = Config.SHOW_STATION_NAME.tk_var()
-        nb.Checkbutton(self.frame, text=ptl("Show station name line"), variable=self.show_station_name).grid(
-            row=self.next_row(), sticky=tk.W, padx=self.PAD_X, pady=(self.PAD_Y, 0))
+        nb.Checkbutton(frame, text=ptl("Show station name line"), variable=self.show_station_name).grid(
+            row=6, sticky=tk.W, pady=(self.PAD_Y, 0))
 
         self.show_totals = Config.SHOW_TOTALS.tk_var()
-        nb.Checkbutton(self.frame, text=ptl("Show totals line"), variable=self.show_totals).grid(
-            row=self.next_row(), sticky=tk.W, padx=self.PAD_X)
+        nb.Checkbutton(frame, text=ptl("Show totals line"), variable=self.show_totals).grid(
+            row=7, sticky=tk.W)
 
         self.var_categories = Config.CATEGORIES.tk_var()
         nb.Checkbutton(frame, text=ptl("Show commodity categories"), variable=self.var_categories, command=self._on_categories_change).grid(
-            row=self.next_row(), sticky=tk.W, padx=self.PAD_X)
+            row=8, sticky=tk.W)
 
         self.var_collapsable = Config.COLLAPSABLE.tk_var()
         nb.Checkbutton(frame, text=ptl("Collapsable commodity categories"), variable=self.var_collapsable, command=self._on_collapsable_change).grid(
-            row=self.next_row(), sticky=tk.W, padx=self.PAD_X)
+            row=9, sticky=tk.W)
 
-        nb.Label(frame, text=ptl("Commodity rows:")).grid(row=self.row, column=0, sticky=tk.W)
+        self.var_scrollable = Config.SCROLLABLE.tk_var()
+        nb.Checkbutton(frame, text=ptl("Scrollable commodity table"), variable=self.var_scrollable, command=self._on_scrollable_change).grid(
+            row=10, sticky=tk.W)
+
+        nb.Label(frame, text=ptl("Commodity rows:")).grid(row=11, column=0, sticky=tk.W)
         self.var_rows = Config.ROWS.tk_string_var()
         nb.OptionMenu(frame, self.var_rows, self.var_rows.get(), *['10', '15','20','25','30','35'], command=self._on_rows_change).grid(
-            row=self.next_row(), column=1, padx=1, pady=1, sticky=tk.W)
+            row=11, column=1, sticky=tk.W)
 
         ttk.Separator(self.frame, orient=tk.HORIZONTAL).grid(row=self.next_row(), sticky=tk.EW, padx=self.PAD_X, pady=(self.PAD_Y, 0))
 
@@ -166,6 +170,14 @@ class PreferencesUi:
             Config.COLLAPSABLE.set(value)
             self.plugin.update_display()
 
+    def _on_scrollable_change(self) -> None:
+        value: bool = self.var_scrollable.get()
+        if value != Config.SCROLLABLE.get():
+            self.plugin.ui.SCROLLABLE = value
+            Config.SCROLLABLE.set(value)
+            self.plugin.ui.reset_frame()
+            self.plugin.update_display()
+
     def _on_rows_change(self, *_) -> None:
         value: int = int(self.var_rows.get())
         if value != Config.ROWS.get():
@@ -173,5 +185,3 @@ class PreferencesUi:
             Config.ROWS.set(value)
             self.plugin.ui.reset_frame()
             self.plugin.update_display()
-
-Config.ROWS.set(25)

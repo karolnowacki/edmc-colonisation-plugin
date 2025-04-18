@@ -4,6 +4,9 @@ _ENGLISH_TRANSLATIONS = {
     "SortingMode.MARKET": "Market",
     "SortingMode.CARRIER": "Carrier",
     "SortingMode.ALPHABET": "Alphabet",
+    "ViewMode.FULL": "Full",
+    "ViewMode.FILTERED": "Filtered",
+    "ViewMode.NONE": "Hide",
 }
 
 

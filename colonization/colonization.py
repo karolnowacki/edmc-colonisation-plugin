@@ -144,7 +144,6 @@ class ColonizationPlugin:
                 self.ui.set_title(short_name)
                 if self.currentConstructionId is None:
                     self.ui.set_station(ptl("{} (not tracked)").format(short_name), color="#f00")
-                    self.ui.set_station("This construction is not tracked", color="#f00")
                 elif self.dockedConstruction:
                     self.ui.set_station(ptl("{} (docked)").format(short_name), 'green')
                 else:
@@ -153,7 +152,7 @@ class ColonizationPlugin:
                 is_total = True
                 if len(self.constructions) == 0:
                     self.ui.set_title("")
-                    self.ui.set_station("Dock to construction site to start tracking progress")
+                    self.ui.set_station(ptl("Dock to construction site to start tracking progress"))
                 else:
                     self.ui.set_title(ptl("Total"))
                     self.ui.set_station("")
