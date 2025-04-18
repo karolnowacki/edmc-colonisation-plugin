@@ -1,4 +1,5 @@
 import tkinter as tk
+from abc import ABC, abstractmethod
 from os import path
 from functools import partial
 from enum import Enum
@@ -68,7 +69,6 @@ class MainUi:
             'view_sort': tk.PhotoImage(file=path.join(self.iconDir, "view_sort.gif")),
             'resize': tk.PhotoImage(file=path.join(self.iconDir, "resize.gif")),
         }
-        self.rows_conf: Optional[list] = None
         self.subscribers: dict[str, Callable[[tk.Event | None], None]] = {}
         self.title: Optional[tk.Label] = None
         self.station: Optional[tk.Label] = None
@@ -369,7 +369,7 @@ class MainUi:
                 self.total_label.grid_remove()
 
 
-class TableView:
+class TableView(ABC):
     COLUMNS = ['name', 'buy', 'demand', 'carrier', 'cargo' ]
 
     def __init__(self, main_ui: MainUi, parent: tk.Widget) -> None:
@@ -377,6 +377,7 @@ class TableView:
         self.parent_frame = parent
         self._fg = None
 
+    @abstractmethod
     def reset(self) -> Self:
         return self
 
@@ -384,15 +385,19 @@ class TableView:
         self._fg = fg
         return self
 
+    @abstractmethod
     def draw_start(self) -> Self:
         return self
 
+    @abstractmethod
     def draw_finish(self) -> Self:
         return self
 
+    @abstractmethod
     def draw_text(self, row: int, col: int|str, text: str|int|None=None, *, crop=False) -> Self:
         return self
 
+    @abstractmethod
     def bind_action(self, row: int, action: Callable) -> Self:
         return self
 
@@ -521,7 +526,7 @@ class CanvasTableView(TableView):
         self.resizing_h_start = self.canvas.winfo_height()
         self.resizing = True
 
-    def stop_resize(self, event: tk.Event):
+    def stop_resize(self, event: tk.Event):  # pylint: disable=W0613
         self.resizing_y_start = 0
         self.resizing_h_start = 0
         self.resizing = False
@@ -580,3 +585,7 @@ class CanvasTableView(TableView):
         self.canvas.create_text(x, y, text=text, fill=self._fg, **attr)
         if self.row < row:
             self.row = row
+
+    def bind_action(self, row: int, action: Callable) -> Self:   # pylint: disable=W0613
+        # not implemented
+        return self
