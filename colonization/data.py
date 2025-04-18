@@ -6,6 +6,7 @@ _ENGLISH_TRANSLATIONS = {
     "SortingMode.ALPHABET": "Alphabet",
     "ViewMode.FULL": "Full",
     "ViewMode.FILTERED": "Filtered",
+    "ViewMode.LACKS": "Lacks",
     "ViewMode.NONE": "Hide",
 }
 
@@ -16,6 +17,7 @@ def ptl(x: str) -> str:
 
 
 class Commodity:
+    ID_TO_COMMODITY_MAP = {}
     def __init__(self, symbol:str, category:str, name:str):
         self.symbol = symbol.strip() if symbol else ''
         self.category = category

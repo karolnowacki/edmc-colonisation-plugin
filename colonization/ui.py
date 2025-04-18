@@ -20,7 +20,8 @@ class SortingMode(Enum):
 class ViewMode(Enum):
     FULL = 0
     FILTERED = 1
-    NONE = 2
+    LACKS = 2
+    NONE = 3
 
 
 class CollapseMode(Enum):
@@ -266,7 +267,7 @@ class MainUi:
         self.table_view.draw_text(row, 'carrier', i.carrier)
         self.table_view.draw_text(row, 'buy', i.buy())
 
-    def set_table(self, table: list[TableEntry], docked, isTotal: bool):
+    def set_table(self, table: list[TableEntry], docked):
         self.commodity_table = table
 
         if not self.table_view:
@@ -290,6 +291,9 @@ class MainUi:
         for i in table:
             if not i or i.demand <= 0:
                 continue
+            if self.view_mode == ViewMode.LACKS:
+                if i.buy() <= 0:
+                    continue
             if self.view_mode == ViewMode.FILTERED:
                 if not docked:
                     if not i.available or i.buy() <= 0:
@@ -467,8 +471,8 @@ class FrameTableView(TableView):
 class CanvasTableView(TableView):
     PAD_X = 5
     PAD_Y = 5
-    WIDTH = 330
-    COLUMN_WIDTH = [145, 45, 45, 45, 40]
+    WIDTH = 350
+    COLUMN_WIDTH = [145, 50, 50, 50, 45]
     COLUMN_START = []
     ROW_HEIGHT = 16
     ATTRIBUTES = [
@@ -478,6 +482,7 @@ class CanvasTableView(TableView):
         {'justify': tk.RIGHT, 'anchor': tk.NE},
         {'justify': tk.RIGHT, 'anchor': tk.NE},
     ]
+    HEADER_ATTRIBUTES = {'justify': tk.LEFT,  'anchor': tk.N}
 
 
     def __init__(self, main_ui: MainUi, parent: tk.Widget) -> None:
@@ -569,8 +574,12 @@ class CanvasTableView(TableView):
 
         x = self.COLUMN_START[col]
         y = row * self.ROW_HEIGHT + self.PAD_Y
-        if col > 0:
+        attr = self.ATTRIBUTES[col]
+        if row == 0:
+            attr = self.HEADER_ATTRIBUTES
+            x += 5 + self.COLUMN_WIDTH[col] / 2
+        elif col > 0:
             x += self.COLUMN_WIDTH[col]
-        self.canvas.create_text(x, y, text=text, fill=self._fg, **self.ATTRIBUTES[col])
+        self.canvas.create_text(x, y, text=text, fill=self._fg, **attr)
         if self.row < row:
             self.row = row
