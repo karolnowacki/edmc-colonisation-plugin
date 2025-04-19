@@ -8,11 +8,12 @@ from config import config as edmc_config
 PREFIX="colonization."
 
 class Config(Enum):
-    IGNORE_FC_UPDATE=f"{PREFIX}ignoreFCUpdate", bool, True
+    IGNORE_FC_UPDATE = f"{PREFIX}ignoreFCUpdate", bool, True
     SHOW_STATION_NAME = f"{PREFIX}showStationName", bool, True
     SHOW_TOTALS = f"{PREFIX}showTotals", bool, True
     CATEGORIES = f"{PREFIX}Categories", bool, True
     COLLAPSABLE = f"{PREFIX}Collapsable", bool, True
+    SCROLLABLE = f"{PREFIX}Scrollable", bool, False
     ROWS = f"{PREFIX}Rows", int, 25
 
     def __init__(self, key:str, var_type:type, default:Any=None):

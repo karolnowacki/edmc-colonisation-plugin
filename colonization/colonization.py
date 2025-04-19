@@ -3,7 +3,7 @@ import json
 import re
 import os
 from os import path
-from typing import Any, Optional
+from typing import Any, Optional, Mapping
 
 from EDMCLogging import get_main_logger
 from monitor import monitor
@@ -43,6 +43,7 @@ class ColonizationPlugin:
             os.makedirs(self.save_dir)
         self._load_commodity_map()
         self._load_commodity_sorting()
+        self._load_market_json()
         self.load()
 
     def cmdr_data(self, data: CAPIData, is_beta: bool) -> None:  # pylint: disable=W0613
@@ -117,6 +118,11 @@ class ColonizationPlugin:
             self.update_display()
             self.save()
 
+        if entry['event'] == "Market":
+            self._load_market_json()
+            self.update_display()
+            self.save()
+
         if entry['event'] == 'StartUp':
             self.cargo = state['Cargo'].copy()
             self.maxcargo = max(int(entry.get("Count", 0)), self.maxcargo)
@@ -136,25 +142,39 @@ class ColonizationPlugin:
         self.update_display()
         return ''
 
+    def _load_market_json(self) -> None:
+        journal_dir = config.get_str('journaldir')
+        if journal_dir is None or journal_dir == '':
+            journal_dir = config.default_journal_dir
+        file_path = os.path.join(journal_dir, 'Market.json')
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = json.load(f)
+            items: list[Mapping[str, Any]] = content.get('Items') or []
+            market: list[str] = []
+            for i in items:
+                if int(i["Stock"]) <= 0:
+                    continue
+                comm = Commodity.ID_TO_COMMODITY_MAP.get(int(i["id"]))
+                if comm:
+                    market.append(comm.symbol.lower())
+            self.markets[content["MarketID"]] = market
+
     def update_display(self, event: Any = None) -> None:
         # pylint: disable=W0613,R0912
         if self.ui:
-            is_total = False
             if self.current_construction:
                 short_name = self.current_construction.get_short_name()
                 self.ui.set_title(short_name)
                 if self.current_construction_id is None:
                     self.ui.set_station(ptl("{} (not tracked)").format(short_name), color="#f00")
-                    self.ui.set_station("This construction is not tracked", color="#f00")
                 elif self.docked_construction:
                     self.ui.set_station(ptl("{} (docked)").format(short_name), 'green')
                 else:
                     self.ui.set_station(short_name)
             else:
-                is_total = True
                 if len(self.constructions) == 0:
                     self.ui.set_title("")
-                    self.ui.set_station("Dock to construction site to start tracking progress")
+                    self.ui.set_station(ptl("Dock to construction site to start tracking progress"))
                 else:
                     self.ui.set_title(ptl("Total"))
                     self.ui.set_station("")
@@ -165,7 +185,7 @@ class ColonizationPlugin:
                 docked_to = "construction"
             if self.carrier.call_sign and monitor.state['StationName'] == self.carrier.call_sign:
                 docked_to = "carrier"
-            self.ui.set_table(self.get_table(), docked_to, is_total)
+            self.ui.set_table(self.get_table(), docked_to)
             if self.ui.track_btn and self.ui.total_label:
                 if self.docked_construction and self.current_construction_id is None:
                     self.ui.track_btn.grid()
@@ -212,7 +232,14 @@ class ColonizationPlugin:
                 reader = csv.DictReader(csvfile)
                 for row in reader:
                     symbol = row['symbol']
-                    self.commodity_map[symbol.lower()] = Commodity(symbol, row['category'], row['name'])
+                    comm_id = int(row['id'])
+                    comm = Commodity(symbol, row['category'], row['name'])
+                    Commodity.ID_TO_COMMODITY_MAP[comm_id] = comm
+                    self.commodity_map[symbol.lower()] = comm
+        if not Commodity.ID_TO_COMMODITY_MAP.get(129031238):
+            comm = Commodity('Steel', 'Metals', 'Steel')
+            Commodity.ID_TO_COMMODITY_MAP[129031238] = comm
+            self.commodity_map['steel'] = comm
 
     def _load_commodity_sorting(self) -> None:
         language = config.get_str('language', default='en')

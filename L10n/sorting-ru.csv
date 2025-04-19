@@ -39,6 +39,7 @@ PowerGenerators,           Электрогенераторы,                32
 ThermalCoolingUnits,       Термальные охладители,            321,   40
 WaterPurifiers,            Водоочистители,                   303,   26
 *, Medicines,                                                200,
+CombatStabilisers,         Боевые стабилизаторы,             203,   59
 AgriculturalMedicines,     Ветмедикаменты,                   204,   58
 BasicMedicines,            Основные лекарства,               210,   59
 *, Metals,                                                   400,

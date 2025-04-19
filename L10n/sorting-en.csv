@@ -39,6 +39,7 @@ PowerGenerators,           Power Generators,             620,    53
 ThermalCoolingUnits,       Thermal Cooling Units,        625,    40
 WaterPurifiers,            Water Purifiers,              627,    26
 *, Medicines,                                            700,
+CombatStabilisers,         Combat Stabilisers,           706,    58
 AgriculturalMedicines,     Agri-Medicines,               703,    58
 BasicMedicines,            Basic Medicines,              705,    59
 *, Metals,                                               800,
