@@ -158,6 +158,19 @@ class WindowReport:
                 self.logtext.delete('1.0', tk.END)
         self.toplevel.after(100, self.refresh_data)  # called only once!
 
+    def _set_current_location(self, entry: MutableMapping[str, Any]) -> Station:
+        self.marketId = entry['MarketID']
+        station = self.stations.get(self.marketId, None)
+        if not station:
+            station = Station(self.marketId, entry['StationName'], entry.get('StationName_Localised'), entry['StationType'], entry['StarSystem'])
+            self.stations[self.marketId] = station
+        if entry['StationName'] != station.stationName:
+            new_name = entry['StationName']
+            self.log(f'Station renamed from "{station.stationName}" to "{new_name}"\n')
+            station.stationName = new_name
+            station.stationLocName = entry.get('StationName_Localised', None)
+        return station
+
     def parse_entry(self, line: bytes):
         if line is None:
             return
@@ -181,22 +194,17 @@ class WindowReport:
                     self.marketId = None
                 # self.log(f'"Commander" event, {self.cmdr}, {self.cmdrFID}\n')
 
+            elif event_type == 'location':
+                if not entry.get('MarketID', False):
+                    return
+                station = self._set_current_location(entry)
+                self.log(f'"Location" event, {self.cmdr} docked at market: {station}\n')
             elif event_type == 'docked':
-                self.marketId = entry['MarketID']
-                station = self.stations.get(self.marketId, None)
-                if not station:
-                    station = Station(self.marketId, entry['StationName'], entry.get('StationName_Localised'), entry['StationType'], entry['StarSystem'])
-                    self.stations[self.marketId] = station
-                if entry['StationName'] != station.stationName:
-                    new_name = entry['StationName']
-                    self.log(f'Station renamed from "{station.stationName}" to "{new_name}"\n')
-                    station.stationName = new_name
-                    station.stationLocName = entry.get('StationName_Localised', None)
-                # self.log(f'"Docked" event, {self.cmdr} docked at market: {station}\n')
-
+                station = self._set_current_location(entry)
+                self.log(f'"Docked" event, {self.cmdr} docked at market: {station}\n')
             elif event_type == 'undocked':
                 self.marketId = None
-                # self.log(f'"Undocked" event\n')
+                self.log(f'"Undocked" event\n')
 
             elif event_type == 'colonisationcontribution':
                 market_id = entry['MarketID']
