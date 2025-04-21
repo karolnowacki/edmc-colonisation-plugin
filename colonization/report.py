@@ -38,7 +38,7 @@ class Station:
         if nm.startswith("Orbital Construction Site: "):
             nm = nm[26:].strip()
         elif nm.startswith("Planetary Construction Site: "):
-            nm = nm[26:].strip()
+            nm = nm[28:].strip()
         return nm
 
     def __str__(self):
