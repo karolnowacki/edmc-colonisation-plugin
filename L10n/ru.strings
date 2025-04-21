@@ -17,10 +17,12 @@
 "SortingMode.MARKET" = "Станция";
 "SortingMode.CARRIER" = "Авианосец";
 "SortingMode.ALPHABET" = "Алфавит";
-"ViewMode.FULL" = "Показывать все товары";
-"ViewMode.FILTERED" = "Продаются на станции";
-"ViewMode.LACKS" = "Нужно докупить";
-"ViewMode.NONE" = "Спрятать таблицу товаров";
+"Sorting mode" = "Сортировка товаров";
+"ViewMode.FULL" = "Все товары";
+"ViewMode.FILTERED" = "Можно купить";
+"ViewMode.LACKS" = "Нужно купить";
+"ViewMode.NONE" = "Спрятать таблицу";
+"Filter mode" = "Фильтр товаров";
 "Remaining {0:.1f} flights at {1} tons each, total {2} t" = "Осталось {0:.1f} ходок по {1} тонн, всего {2} тонн";
 
 /* Construction sites replacement */

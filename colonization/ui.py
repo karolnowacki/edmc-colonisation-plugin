@@ -74,7 +74,7 @@ class MainUi:
         self.station: Optional[tk.Label] = None
         self.total_label: Optional[tk.Label] = None
         self.track_btn: Optional[tk.Button] = None
-        self.sorting_cb: Optional[tk.OptionMenu] = None
+        self.sorting_btn: Optional[tk.OptionMenu] = None
         self.prev_btn: Optional[tk.Label] = None
         self.next_btn: Optional[tk.Label] = None
         self.view_btn: Optional[tk.Label] = None
@@ -123,17 +123,21 @@ class MainUi:
         self.view_btn = tk.Menubutton(frame, direction='below', image=self.icons['view_close'], cursor="hand2")
         self.view_btn.menu = tk.Menu(self.view_btn, tearoff=0)
         self.view_btn["menu"] = self.view_btn.menu
+        self.view_btn.menu.add_command(label=ptl("Filter mode"))
+        self.view_btn.menu.add_separator()
         for v in list(ViewMode):
             self.view_btn.menu.add_radiobutton(label=ptl(str(v)), variable=self.view_mode_var, command=self.change_view)
         self.view_btn.grid(row=0, column=3, sticky=tk.E)
 
         self.sorting_var.set(ptl(str(self.sorting_mode)))
-        self.sorting_cb = tk.Menubutton(frame, direction='below', image=self.icons['view_sort'], cursor="hand2")
-        self.sorting_cb.menu = tk.Menu(self.sorting_cb, tearoff=0)
-        self.sorting_cb["menu"] = self.sorting_cb.menu
+        self.sorting_btn = tk.Menubutton(frame, direction='below', image=self.icons['view_sort'], cursor="hand2")
+        self.sorting_btn.menu = tk.Menu(self.sorting_btn, tearoff=0)
+        self.sorting_btn["menu"] = self.sorting_btn.menu
+        self.sorting_btn.menu.add_command(label=ptl("Sorting mode"))
+        self.sorting_btn.menu.add_separator()
         for v in list(SortingMode):
-            self.sorting_cb.menu.add_radiobutton(label=ptl(str(v)), variable=self.sorting_var, command=self.change_sorting)
-        self.sorting_cb.grid(row=0, column=4, sticky=tk.E)
+            self.sorting_btn.menu.add_radiobutton(label=ptl(str(v)), variable=self.sorting_var, command=self.change_sorting)
+        self.sorting_btn.grid(row=0, column=4, sticky=tk.E)
 
         theme.update(frame)
 
@@ -170,19 +174,11 @@ class MainUi:
         view_mode = self.view_mode_var.get()
         index = [ptl(str(e)) for e in ViewMode].index(view_mode)
         self.view_mode = list(ViewMode)[index]
-        #if self.view_btn:
-        #    if self.view_mode == ViewMode.FULL:
-        #        self.view_btn['image'] = self.icons['view_open']
-        #        self.view_mode = ViewMode.FILTERED
-        #    elif self.view_mode == ViewMode.FILTERED:
-        #        self.view_btn['image'] = self.icons['view_close']
-        #        self.view_mode = ViewMode.NONE
-        #    elif self.view_mode == ViewMode.NONE:
-        #        self.view_btn['image'] = self.icons['view_close']
-        #        self.view_mode = ViewMode.FULL
         if self.view_mode == ViewMode.NONE:
+            self.view_btn['image'] = self.icons['view_close']
             self.table_frame.grid_remove()
         else:
+            self.view_btn['image'] = self.icons['view_open']
             self.table_frame.grid(row=self.next_row(), column=0, sticky=tk.EW)
         self.event('update', None)
 
@@ -255,7 +251,7 @@ class MainUi:
         c: Commodity = i.commodity
 
         fg_color = theme.current['foreground'] if theme.current else 'black'
-        fg_name_color = fg_color if i.buy() <= 0 and not i.available else '#FFF'
+        fg_name_color = fg_color if i.buy() <= 0 or i.available else 'dim gray' #'#FFF'
         self.table_view.fg(fg_color)
 
         self.table_view.fg(fg_name_color).draw_text(row, 'name', c.name, crop=True)
@@ -494,7 +490,7 @@ class CanvasTableView(TableView):
                 self.COLUMN_START.append(x)
                 x += w
             x += self.PAD_X
-            self.TABLE_WIDTH = x  # pylint: disable=C0103
+            # self.TABLE_WIDTH = x
 
         self.frame = tk.Frame(parent, pady=3, padx=3)
         self.frame.grid(sticky=tk.NSEW)
@@ -504,6 +500,7 @@ class CanvasTableView(TableView):
         self.resizing_y_start = 0
         self.resizing_h_start = 0
         self.reset()
+        theme.update(self.frame)
 
     def reset(self):
         self.canvas = tk.Canvas(self.frame, width=self.TABLE_WIDTH, height=200, highlightthickness=0,
@@ -511,15 +508,17 @@ class CanvasTableView(TableView):
         self.canvas.pack()
         frame = tk.Frame(self.frame)
         frame.pack(side=tk.RIGHT, fill=tk.Y)
-        self.vbar = tk.Scrollbar(frame, orient=tk.VERTICAL, command=self.canvas.yview)
-        self.vbar.pack(expand=True,fill=tk.BOTH)
-        self.sizegrip = tk.Label(frame, image=self.main_ui.icons['resize'], cursor="sizing")
-        self.sizegrip.pack(side=tk.BOTTOM, anchor=tk.SE)
-        self.sizegrip.bind("<ButtonPress-1>", self.start_resize)
-        self.sizegrip.bind("<ButtonRelease-1>", self.stop_resize)
-        self.sizegrip.bind("<Motion>", self.resize_frame)
-        self.canvas.config(yscrollcommand=self.vbar.set)
-        self.canvas.pack(side=tk.LEFT,expand=True,fill=tk.BOTH)
+        vbar = tk.Scrollbar(frame, orient=tk.VERTICAL, command=self.canvas.yview)
+        vbar.pack(expand=True,fill=tk.BOTH)
+        sizegrip = tk.Label(frame, image=self.main_ui.icons['resize'], cursor="sizing")
+        sizegrip.pack(side=tk.BOTTOM, anchor=tk.SE)
+        sizegrip.bind("<ButtonPress-1>", self.start_resize)
+        sizegrip.bind("<ButtonRelease-1>", self.stop_resize)
+        sizegrip.bind("<Motion>", self.resize_frame)
+        self.canvas.config(yscrollcommand=vbar.set)
+        self.canvas.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
+        theme.update(frame)
+        theme.update(self.canvas)
 
     def start_resize(self, event: tk.Event):
         self.resizing_y_start = event.y_root
