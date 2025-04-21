@@ -49,7 +49,7 @@ class PreferencesUi:
         btn.grid(row=3, columnspan=2, sticky=tk.EW, pady=5)
         self.ignore_fc_update = Config.IGNORE_FC_UPDATE.tk_var()
         nb.Checkbutton(frame, text=ptl("Ignore event based cAPI Fleet Carrier update"), variable=self.ignore_fc_update).grid(
-            row=4, columnspan=2, sticky=tk.W)
+            row=self.next_row(), columnspan=2, sticky=tk.W)
 
         ttk.Separator(self.frame, orient=tk.HORIZONTAL).grid(row=self.next_row(), sticky=tk.EW, padx=self.PAD_X)
 
@@ -69,7 +69,7 @@ class PreferencesUi:
         nb.Checkbutton(frame, text=ptl("Collapsable commodity categories"), variable=self.var_collapsable, command=self._on_collapsable_change).grid(
             row=self.next_row(), sticky=tk.W, padx=self.PAD_X)
 
-        nb.Label(frame, text=ptl("Commodity rows:")).grid(row=self.row, column=0, sticky=tk.W)
+        nb.Label(frame, text=ptl("Commodity rows:")).grid(row=self.next_row(), column=0, sticky=tk.W)
         self.var_rows = Config.ROWS.tk_string_var()
         nb.OptionMenu(frame, self.var_rows, self.var_rows.get(), *['10', '15','20','25','30','35'], command=self._on_rows_change).grid(
             row=self.next_row(), column=1, padx=1, pady=1, sticky=tk.W)
