@@ -5,7 +5,7 @@
 "Station" = "Станция";
 "Track this construction" = "Отслеживать строительство";
 "This construction is not tracked" = "Эта стройка не отслеживается";
-"Dock to construction site to start tracking progress = "Причальте к площадке, для отслеживания стройки"
+"Dock to construction site to start tracking progress = "Причальте к площадке, для отслеживания стройки";
 "{} (docked)" = "{} (пристыкован)";
 "{} (not tracked)" = "{} (не отслеживается)";
 "Commodity" = "Материалы";
