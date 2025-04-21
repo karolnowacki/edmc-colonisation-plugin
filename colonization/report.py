@@ -8,7 +8,7 @@ import queue
 
 from datetime import datetime, timedelta
 from os.path import basename, getctime
-from tkinter import scrolledtext, ttk
+from tkinter import ttk
 from typing import Any, TextIO, MutableMapping, Optional
 
 from config import config as edmc_config
@@ -48,6 +48,31 @@ class Station:
             return f'{self.stationName} in {self.starSystem} ({self.marketId})'
 
 
+class ScrolledText(tk.Text):
+    def __init__(self, master=None, **kw):
+        self.frame = tk.Frame(master)
+        self.vbar = tk.Scrollbar(self.frame)
+        self.vbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        kw.update({'yscrollcommand': self.vbar.set})
+        tk.Text.__init__(self, self.frame, **kw)
+        self.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.vbar['command'] = self.yview
+
+        # Copy geometry methods of self.frame without overriding Text
+        # methods -- hack!
+        text_meths = vars(tk.Text).keys()
+        methods = vars(tk.Pack).keys() | vars(tk.Grid).keys() | vars(tk.Place).keys()
+        methods = methods.difference(text_meths)
+
+        for m in methods:
+            if m[0] != '_' and m != 'config' and m != 'configure':
+                setattr(self, m, getattr(self.frame, m))
+
+    def __str__(self):
+        return str(self.frame)
+
+
 class WindowReport:
     toplevel: Optional[tk.Toplevel] = None
 
@@ -57,7 +82,7 @@ class WindowReport:
         self.progress_lbl: Optional[tk.Label] = None
         self.progress_bar: Optional[ttk.Progressbar] = None
         self.progress_var: Optional[tk.IntVar] = None
-        self.logtext: Optional[scrolledtext.ScrolledText] = None
+        self.logtext: Optional[ScrolledText] = None
         self.tracefile: Optional[TextIO] = None
         self.cmdr: Optional[str] = None
         self.cmdrFID: Optional[str] = None
@@ -91,7 +116,7 @@ class WindowReport:
         self.progress_var = tk.IntVar()
         self.progress_bar = ttk.Progressbar(self.frame, orient=tk.HORIZONTAL, maximum=100, variable=self.progress_var)
         self.progress_bar.grid(row=2, column=1, sticky=tk.EW, padx=10)
-        self.logtext = scrolledtext.ScrolledText(self.frame, height=10)
+        self.logtext = ScrolledText(self.frame, height=10)
         self.logtext.grid(row=3, columnspan=2, sticky=tk.NSEW)
         self.frame.rowconfigure(3, weight=1)
         self.frame.pack(expand=True, fill=tk.BOTH, pady=5, padx=5)
