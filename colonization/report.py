@@ -9,8 +9,10 @@ import queue
 from datetime import datetime, timedelta
 from os.path import basename, getctime
 from tkinter import ttk
+from tkinter import font as tk_font
 from typing import Any, TextIO, MutableMapping, Optional
 
+from theme import theme as edmc_theme
 from config import config as edmc_config
 from .data import ptl
 
@@ -22,6 +24,44 @@ def full_logs_scan():
     if WindowReport.toplevel:
         return
     WindowReport().show()
+
+
+class ReportLabel(tk.Label):
+    def __init__(self, master: ttk.Frame | tk.Frame | None = None, **kw: Any) -> None:
+        fg_color = edmc_theme.current['highlight'] if edmc_theme.current else 'blue'
+        self.foreground = kw.get('foreground', fg_color)
+        ttk.Label.__init__(self, master, **kw)
+        self.font_u: tk_font.Font
+        self.font_n = None
+        self.bind('<Button-1>', self._click)
+        self.bind('<Enter>', self._enter)
+        self.bind('<Leave>', self._leave)
+        # set up initial appearance
+        self.configure(state=kw.get('state', tk.NORMAL),
+                       text=kw.get('text'),
+                       foreground=self.foreground,
+                       font=kw.get('font', ttk.Style().lookup('TLabel', 'font')))
+
+    def configure(self, cnf: dict[str, Any] | None = None, **kw: Any) -> dict[str, tuple[str, str, str, Any, Any]] | None:
+        if 'foreground' in kw:
+            setattr(self, 'foreground', kw['foreground'])
+        if 'font' in kw:
+            self.font_n = kw['font']
+            self.font_u = tk_font.Font(font=self.font_n)
+            self.font_u.configure(underline=True)
+            kw['font'] = self.font_n
+        return super().configure(cnf, **kw)
+
+    def _enter(self, event: tk.Event) -> None:
+        if str(self['state']) != tk.DISABLED:
+            super().configure(font=self.font_u)
+
+    def _leave(self, event: tk.Event) -> None:
+        super().configure(font=self.font_n)
+
+    def _click(self, event: tk.Event) -> None:
+        full_logs_scan()
+
 
 class Station:
     def __init__(self, marketId: int, name: str, loc_name: Optional[str], st_type: str, system: str):

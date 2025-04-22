@@ -10,7 +10,7 @@ from theme import theme
 
 from .config import Config
 from .data import Commodity, TableEntry, ptl
-from .report import full_logs_scan
+from .report import ReportLabel
 
 
 class SortingMode(Enum):
@@ -128,7 +128,7 @@ class MainUi:
         self.view_btn.menu.add_separator()
         for v in list(ViewMode):
             self.view_btn.menu.add_radiobutton(label=ptl(str(v)), variable=self.view_mode_var, command=self.change_view)
-        self.view_btn.grid(row=0, column=3, sticky=tk.E)
+        self.view_btn.grid(row=0, column=3, padx=4, sticky=tk.E)
 
         self.sorting_var.set(ptl(str(self.sorting_mode)))
         self.sorting_btn = tk.Menubutton(frame, direction='below', image=self.icons['view_sort'], cursor="hand2")
@@ -138,9 +138,9 @@ class MainUi:
         self.sorting_btn.menu.add_separator()
         for v in list(SortingMode):
             self.sorting_btn.menu.add_radiobutton(label=ptl(str(v)), variable=self.sorting_var, command=self.change_sorting)
-        self.sorting_btn.grid(row=0, column=4, sticky=tk.E)
+        self.sorting_btn.grid(row=0, column=4, padx=4, sticky=tk.E)
 
-        tk.Button(frame, text=ptl("Report"), padx=5, command=full_logs_scan).grid(row=0, column=5)
+        ReportLabel(frame, text=ptl("Report")).grid(row=0, column=5, padx=(4, 0))
 
         theme.update(frame)
 
