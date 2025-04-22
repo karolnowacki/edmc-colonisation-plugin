@@ -12,6 +12,7 @@ from tkinter import ttk
 from typing import Any, TextIO, MutableMapping, Optional
 
 from config import config as edmc_config
+from .data import ptl
 
 _RE_LOGFILE = re.compile(r'^Journal(Alpha|Beta)?\.[0-9]{2,4}(-)?[0-9]{2}(-)?[0-9]{2}(T)?[0-9]{2}[0-9]{2}[0-9]{2}'
                          r'\.[0-9]{2}\.log$')
@@ -73,12 +74,23 @@ class ScrolledText(tk.Text):
         return str(self.frame)
 
 
+def _commodity_name(c: dict[str, Any]):
+    name: str = c.get("Name_Localised")
+    if not name:
+        name = c.get("Name")
+        if name.startswith("$") and name.endswith("_name;"):
+            name = name[1:-6]
+    return name
+
+
 class WindowReport:
     toplevel: Optional[tk.Toplevel] = None
 
     def __init__(self):
         self.frame: Optional[tk.Frame] = None
         self.spinbox: Optional[tk.Spinbox] = None
+        self.verbose_var: Optional[tk.BooleanVar] = None
+        self.verbose_cb: Optional[tk.Checkbutton] = None
         self.progress_lbl: Optional[tk.Label] = None
         self.progress_bar: Optional[ttk.Progressbar] = None
         self.progress_var: Optional[tk.IntVar] = None
@@ -92,6 +104,7 @@ class WindowReport:
         self.weeks_var: Optional[tk.StringVar] = None
         self.ui_queue: queue.Queue = queue.Queue()
         self.thread: Optional[threading.Thread] = None
+        self.verbose: bool = False
 
     def show(self):
         if self.toplevel:
@@ -102,30 +115,35 @@ class WindowReport:
         self.frame = tk.Frame(self.toplevel, relief=tk.GROOVE)
         self.frame.columnconfigure(0, weight=1)
         self.frame.columnconfigure(1, weight=1)
-        tk.Label(self.frame, text="Generate colonization report for last weeks:").grid(
+        tk.Label(self.frame, text=ptl("Generate colonization report for last weeks:")).grid(
             row=0, column=0, sticky=tk.E
         )
         self.weeks_var = tk.StringVar(value="4")
-        self.spinbox = tk.Spinbox(self.frame, from_=0, to=12*4, textvariable=self.weeks_var)
-        self.spinbox.grid(row=0, column=1, sticky=tk.W)
-        tk.Button(self.frame, text="Generate report", command=self._generate_report).grid(
-            row=1, columnspan=2
+        self.spinbox = tk.Spinbox(self.frame, width=3, from_=0, to=12*4, textvariable=self.weeks_var)
+        self.spinbox.grid(row=0, column=1, padx=20, sticky=tk.W)
+        self.verbose_var = tk.BooleanVar(value=self.verbose)
+        self.verbose_cb = tk.Checkbutton(self.frame, text=ptl("Verbose log"), variable=self.verbose_var)
+        self.verbose_cb.grid(row=0, column=2, sticky=tk.E)
+        tk.Button(self.frame, text=ptl("Generate report"), command=self._generate_report).grid(
+            row=1, columnspan=3
         )
-        self.progress_lbl = tk.Label(self.frame, text='')
+        self.progress_lbl = tk.Label(self.frame, text=ptl('Progress:'))
         self.progress_lbl.grid(row=2, column=0, sticky=tk.EW)
         self.progress_var = tk.IntVar()
-        self.progress_bar = ttk.Progressbar(self.frame, orient=tk.HORIZONTAL, maximum=100, variable=self.progress_var)
-        self.progress_bar.grid(row=2, column=1, sticky=tk.EW, padx=10)
+        self.progress_bar = ttk.Progressbar(self.frame, orient=tk.HORIZONTAL, maximum=100, variable=self.progress_var, )
+        self.progress_bar.grid(row=2, column=1, columnspan=2, sticky=tk.EW, padx=10)
         self.logtext = ScrolledText(self.frame, height=10)
-        self.logtext.grid(row=3, columnspan=2, sticky=tk.NSEW)
+        self.logtext.grid(row=3, columnspan=3, sticky=tk.NSEW)
         self.frame.rowconfigure(3, weight=1)
         self.frame.pack(expand=True, fill=tk.BOTH, pady=5, padx=5)
 
     def _generate_report(self):
+        self.verbose = self.verbose_var.get()
         self.thread = threading.Thread(target=self._generate_report_worker, daemon=True)
         self.thread.start()
 
     def _generate_report_worker(self):
+        self.ui_queue.put(('clear', None))
         journal_dir: str | None = edmc_config.get_str('journaldir') or edmc_config.default_journal_dir
         journal_dir_path = pathlib.Path.expanduser(pathlib.Path(journal_dir))
         journal_files = (x for x in os.listdir(journal_dir_path) if _RE_LOGFILE.search(x))
@@ -140,25 +158,27 @@ class WindowReport:
             with open(tracefile_name, "wt", encoding='utf-8') as tracefile:
                 self.tracefile = tracefile
                 self.toplevel.after(100, self.refresh_data)
-                self.progress("Starting...", 0)
+                self.progress(ptl("Starting..."), 0)
                 for i in range(num_latest_journal_files):
                     logfile = sorted_latest_journal_files[i]
                     with open(logfile, 'rb') as loghandle:
                         self.progress(basename(logfile), int((1+i*100) / num_latest_journal_files))
-                        tracefile.write(f'Opening file {logfile}\n')
+                        tracefile.write(f'File: {logfile}\n')
                         tracefile.flush()
                         for line in loghandle:
                             self.parse_entry(line)
-                self.progress("Done", 100)
+                self.progress(ptl("Done"), 100)
                 self.ui_queue.put(('clear', None))
                 tracefile.write('\nTotal:\n')
                 for station in self.stations.values():
                     if len(station.contributed):
                         for cmdr, contr in station.contributed.items():
-                            self.log(f'cmdr {cmdr}: contributed {contr:6d} to "{station.name()}" in system {station.starSystem}\n')
+                            self.log(f'{cmdr}:\t{contr:6d} ton to "{station.name()}" ({station.starSystem})\n')
             self.tracefile = None
 
-    def log(self, text: str):
+    def log(self, text: str, *, verbose:bool = False):
+        if verbose and not self.verbose:
+            return
         self.tracefile.write(self.timestamp + ": " + text)
         # self.tracefile.flush()
         self.ui_queue.put(('log', text))
@@ -223,13 +243,13 @@ class WindowReport:
                 if not entry.get('MarketID', False):
                     return
                 station = self._set_current_location(entry)
-                self.log(f'"Location" event, {self.cmdr} docked at market: {station}\n')
+                self.log(f'Location: {self.cmdr} is at: {station}\n', verbose=True)
             elif event_type == 'docked':
                 station = self._set_current_location(entry)
-                self.log(f'"Docked" event, {self.cmdr} docked at market: {station}\n')
+                self.log(f'Docked: {self.cmdr} docked at: {station}\n', verbose=True)
             elif event_type == 'undocked':
                 self.marketId = None
-                self.log(f'"Undocked" event\n')
+                self.log(f'Undocked\n', verbose=True)
 
             elif event_type == 'colonisationcontribution':
                 market_id = entry['MarketID']
@@ -241,7 +261,11 @@ class WindowReport:
                     return
                 station = self.stations[market_id]
                 contributed = sum([x["Amount"] for x in entry["Contributions"]])
-                self.log(f'"ColonisationContribution" event, cmdr:{self.cmdr} market: "{station} contributed {contributed} ton"\n')
+                self.log(f'cmdr:{self.cmdr} contributed {contributed:3d} ton to "{station}"\n')
+                if self.verbose:
+                    spaces = ' ' * len(f'cmdr:{self.cmdr} contributed')
+                    for x in entry["Contributions"]:
+                        self.log(f'{spaces} {x["Amount"]:3d} ton of "{_commodity_name(x)}"\n', verbose=True)
                 if self.cmdr in station.contributed:
                     station.contributed[self.cmdr] += contributed
                 else:
@@ -257,10 +281,10 @@ class WindowReport:
                     return
                 station = self.stations[market_id]
                 if entry['ConstructionComplete']:
-                    self.log(f'ConstructionComplete: {station}\n')
+                    self.log(f'Construction complete: {station}\n', verbose=station.complete)
                     station.complete = True
                 if entry['ConstructionFailed']:
-                    self.log(f'ConstructionFailed: {station}\n')
+                    self.log(f'Construction failed: {station}\n', verbose=station.failed)
                     station.failed = True
 
         except Exception as ex:

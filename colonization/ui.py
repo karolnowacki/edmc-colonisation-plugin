@@ -140,7 +140,7 @@ class MainUi:
             self.sorting_btn.menu.add_radiobutton(label=ptl(str(v)), variable=self.sorting_var, command=self.change_sorting)
         self.sorting_btn.grid(row=0, column=4, sticky=tk.E)
 
-        tk.Button(frame, text="Report", command=full_logs_scan).grid(row=0, column=5)
+        tk.Button(frame, text=ptl("Report"), padx=5, command=full_logs_scan).grid(row=0, column=5)
 
         theme.update(frame)
 

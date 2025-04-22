@@ -58,3 +58,11 @@
 "Commodity rows:" = "Строк в таблице товаров";
 "List of tracked construction sites" = "Отслеживаемые стройки";
 "Remove from tracking" = "Не отслеживать";
+
+/* Report generation */
+"Report" = "Отчёт";
+"Generate colonization report for last weeks:" = "Создать отчёт за последние недели:";
+"Verbose log" = "Детальный лог-файл";
+"Generate report" = "Сгенерировать отчёт";
+"Progress:" = "Прогресс:";
+"Done" = "Готово";
