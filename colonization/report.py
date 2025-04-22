@@ -173,7 +173,7 @@ class WindowReport:
         self.progress_lbl = tk.Label(self.frame, text=ptl('Progress:'))
         self.progress_lbl.grid(row=2, column=0, sticky=tk.EW)
         self.progress_var = tk.IntVar()
-        self.progress_bar = ttk.Progressbar(self.frame, orient=tk.HORIZONTAL, maximum=100, variable=self.progress_var, )
+        self.progress_bar = ttk.Progressbar(self.frame, orient=tk.HORIZONTAL, maximum=100, variable=self.progress_var)
         self.progress_bar.grid(row=2, column=1, columnspan=2, sticky=tk.EW, padx=10)
         self.logtext = ScrolledText(self.frame, height=10)
         self.logtext.grid(row=3, columnspan=3, sticky=tk.NSEW)
@@ -338,4 +338,3 @@ class WindowReport:
         except Exception as ex:  # pylint: disable= W0718
             self.error_count += 1
             self.log(f'Invalid journal entry:\n{line!r}\nexception: {ex}\n')
-            return

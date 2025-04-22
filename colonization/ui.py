@@ -137,7 +137,8 @@ class MainUi:
         self.sorting_btn.menu.add_command(label=ptl("Sorting mode"))
         self.sorting_btn.menu.add_separator()
         for v in list(SortingMode):
-            self.sorting_btn.menu.add_radiobutton(label=ptl(str(v)), variable=self.sorting_var, command=self.change_sorting)
+            self.sorting_btn.menu.add_radiobutton(label=ptl(str(v)), variable=self.sorting_var,
+                                                  command=self.change_sorting)
         self.sorting_btn.grid(row=0, column=4, padx=4, sticky=tk.E)
 
         ReportLabel(frame, text=ptl("Report")).grid(row=0, column=5, padx=(4, 0))
