@@ -255,6 +255,7 @@ class WindowReport:
             station = Station(self.market_id, entry['StationName'], entry.get('StationName_Localised'),
                               entry['StationType'], entry['StarSystem'])
             self.stations[self.market_id] = station
+        station.star_system = entry['StarSystem']  # in case a carrier has jumped
         if entry['StationName'] != station.station_name:
             new_name = entry['StationName']
             self.log(f'Station renamed from "{station.station_name}" to "{new_name}"\n')
