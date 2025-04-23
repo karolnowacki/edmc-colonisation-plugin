@@ -18,6 +18,12 @@ from .data import Commodity, TableEntry, ptl
 
 logger = get_main_logger()
 
+GAME_LANG_MAPPING = {
+    'English': 'en',
+    'Russian': 'ru',
+}
+
+
 class ColonizationPlugin:
 
     def __init__(self) -> None:
@@ -34,6 +40,7 @@ class ColonizationPlugin:
         self.docked_construction = False
         self.markets: dict[str, list[str]] = {}
         self.current_market_id = None
+        self.commodity_lang: str | None = None
         logger.debug("initialized")
 
     def plugin_start3(self, plugin_dir: str) -> None:
@@ -42,7 +49,7 @@ class ColonizationPlugin:
         if not path.exists(self.save_dir):
             os.makedirs(self.save_dir)
         self._load_commodity_map()
-        self._load_commodity_sorting()
+        self._load_commodity_sorting(None)
         self._load_market_json()
         self.load()
 
@@ -57,6 +64,14 @@ class ColonizationPlugin:
     def journal_entry(self, cmdr: str, is_beta: bool, system: str, station: str, entry: dict[str, Any],
                       state: dict[str, Any]) -> str:
         # pylint: disable=W0613,R0912
+
+        if entry['event'] == 'StartUp' or entry['event'] == 'LoadGame':
+            # switch cargo language to game language
+            lang = state['GameLanguage'].split('/')[0]
+            if lang in GAME_LANG_MAPPING.keys():
+                reloaded = self._load_commodity_sorting(GAME_LANG_MAPPING[lang])
+                if reloaded:
+                    self.update_display()
 
         if entry['event'] == 'MarketBuy':
             self.add_cargo(entry['Type'], entry['Count'])
@@ -241,12 +256,19 @@ class ColonizationPlugin:
             Commodity.ID_TO_COMMODITY_MAP[129031238] = comm
             self.commodity_map['steel'] = comm
 
-    def _load_commodity_sorting(self) -> None:
-        language = config.get_str('language', default='en')
-        file_path = path.join(self.plugin_dir, 'L10n', f"sorting-{language}.csv")
+    def _load_commodity_sorting(self, lang: str | None) -> bool:
+        if not lang:
+            if self.commodity_lang:
+                return False
+            lang = ptl("!Language")
+        file_path = path.join(self.plugin_dir, 'L10n', f"sorting-{lang}.csv")
         if not path.isfile(file_path):
+            lang = 'en'
             file_path = path.join(self.plugin_dir, 'L10n', "sorting-en.csv")
         if path.isfile(file_path):
+            if self.commodity_lang == lang:
+                return False
+            self.commodity_lang = lang
             with open(file_path, mode='r', encoding='utf-8') as csvfile:
                 reader = csv.DictReader(csvfile)
                 category = ''
@@ -262,9 +284,11 @@ class ColonizationPlugin:
                         commodity.name = row['name'].strip()
                         commodity.market_ord = int(row['market'].strip())
                         commodity.carrier_ord = int(row['carrier'].strip())
+            return True
+        return False
 
     def update_language(self):
-        self._load_commodity_sorting()
+        self._load_commodity_sorting(None)
         self.ui.reset_frame()
 
     def load(self) -> None:
