@@ -309,6 +309,10 @@ class MainUi:
                 cc.rows.append(i)
             else:
                 display_list.append(i)
+        if self.view_mode == ViewMode.NONE:
+            self.top_rows = 0
+            self.bottom_rows = 0
+            display_list.clear()
         if self.scrollable_conf:
             self.top_rows = 0
         # collapse first rows into 'others'
