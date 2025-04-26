@@ -1,0 +1,73 @@
+symbol,name,market,carrier
+*, Chemicals,                                            100,
+Explosives,                Sprengstoffe,                 103,    17
+LiquidOxygen,              Flüssiger Sauerstoff,         108,    49
+Pesticides,                Pestizide,                    112,    60
+SurfaceStabilisers,        Oberflächenstabilisierer,     113,    18
+Water,                     Wasser,                       117,     7
+*, Consumer Items,                                       200,
+EvacuationShelter,         Evakuierungsschutz,           210,    20
+SurvivalEquipment,         Überlebensausrüstung,         224,    52
+*, Foods,                                                300,
+Animalmeat,                Tierfleisch,                  304,    22
+Coffee,                    Kaffee,                       314,    64
+Fish,                      Fisch,                        321,    28
+FoodCartridges,            Nahrungskartuschen,           322,    15
+FruitAndVegetables,        Obst und Gemüse,              323,    44
+Grain,                     Getreide,                     327,     4
+SyntheticMeat,             Künstliches Fleisch,          344,    50
+Tea,                       Tee,                          346,     2
+*, Industrial Materials,                                 400,
+CeramicComposites,         Keramik-Verbundwerkstoffe,    401,     6
+CMMComposite,              CMM-Komposit,                 402,     8
+InsulatingMembrane,        Isoliermembran,               403,    51
+Polymers,                  Polymers,                     407,    14
+Semiconductors,            Halbleiter,                   408,    16
+Superconductors,           Supraleiter,                  409,    13
+*, Legal Drugs,                                          500,
+Beer,                      Bier,                         503,    27
+Liquor,                    Spirituosen,                  518,     1
+Wine,                      Wein,                         533,    29
+*, Machinery,                                            600,
+BuildingFabricators,       Baufabrikatoren,              603,    62
+CropHarvesters,            Erntemaschinen,               604,    19
+EmergencyPowerCells,       Notfall-Energiezellen,        605,    23
+GeologicalEquipment,       Geologie-Ausrüstung,          608,    56
+HeliostaticFurnaces,       Mikrobielle Öfen,             615,    21
+MineralExtractors,         Mineralextraktoren,           616,    10
+PowerGenerators,           Stromerzeuger,                620,    53
+ThermalCoolingUnits,       Thermal-Kühleinheiten,        625,    40
+WaterPurifiers,            Wasserreiniger,               627,    26
+*, Medicines,                                            700,
+AgriculturalMedicines,     Agrar-Medikamente,            703,    58
+BasicMedicines,            Allgemeine Medikamente,       705,    59
+*, Metals,                                               800,
+Aluminium,                 Aluminium,                    801,    63
+Copper,                    Kupfer,                       806,    65
+Steel,                     Stahl,                        823,     5
+Titanium,                  Titan,                        827,    12
+*, Minerals,                                             900,
+*, Salvage,                                             1000,
+*, Slavery,                                             1100,
+*, Technology,                                          1200,
+AdvancedCatalysers,        Fortschr. Katalysatoren,     1201,    61
+AutoFabricators,           Fabrikatoren,                1204,    48
+BioReducingLichen,         Bioreduzierende Flechten,    1206,     9
+ComputerComponents,        Computerteile,               1208,    54
+HazardousEnvironmentSuits, Schutzanzüge,                1210,    24
+TerrainEnrichmentSystems,  Landanreicherungssysteme,    1212,    25
+MedicalDiagnosticEquipment,Medizinische Diagnostikausrüstung,1213,     3
+MicroControllers,          Mikrocontroller,             1214,    11
+MuTomImager,               Myon-Bildgeber,              1215,    41
+ResonatingSeparators,      Resonanzabgrenzer,           1217,    42
+Robotics,                  Roboter,                     1218,    66
+StructuralRegulators,      Strukturregulatoren,         1219,    45
+*, Textiles,                                            1300,
+MilitaryGradeFabrics,      Militärische Stoffe,         1308,    67
+NaturalFabrics,            Naturfasern,                 1309,    57
+SyntheticFabrics,          Chemiefasern,                1311,    55
+*, Waste,                                               1400,
+Biowaste,                  Biomüll,                     1401,    43
+*, Weapons,                                             1500,
+NonLethalWeapons,          Nichttödliche Waffen,        1508,    46
+ReactiveArmour,            Reaktivrüstung,              1510,    47

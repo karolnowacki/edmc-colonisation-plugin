@@ -1,0 +1,54 @@
+/* UI labels and buttons */
+"Colonization:" = " ";
+"Loading..." = "Daten werden geladen...";
+"Total" = "alle Bauvorhaben";
+"Station" = "Station";
+"Track this construction" = "Diese Konstruktion verfolgen";
+"This construction is not tracked" = "Diese Konstruktion wird nicht verfolgt";
+"{} (docked)" = "{} (angedockt)";
+"{} (not tracked)" = "{} (nicht verfolgt)";
+"Commodity" = "Materialien";
+"Need" = "Benötigt";
+"Cargo" = "Fracht";
+"Carrier" = "Träger";
+"Buy" = "Kaufen";
+"Demand" ="Nachfrage";
+"SortingMode.MARKET" = "Station";
+"SortingMode.CARRIER" = "Träger";
+"SortingMode.ALPHABET" = "Alphabet";
+
+/* Construction sites replacement */
+"$EXT_PANEL_ColonisationShip" = "Kolonisationsschiff";
+"Planetary Construction Site" = "Siedlung";
+"Orbital Construction Site" = "Station";
+
+/* Commodity categories */
+"Chemicals" = "Chemikalien";
+"Consumer Items" = "Konsumgüter";
+"Foods" = "Nahrung";
+"Industrial Materials" = "Industriematerial";
+"Legal Drugs" = "Legale Drogen";
+"Machinery" = "Maschinen";
+"Medicines" = "Medikamente";
+"Metals" = "Metalle";
+"Minerals" = "Mineralien";
+"Salvage" = "Bergungsgut";
+"Slavery" = "Sklaverei";
+"Technology" = "Technologie";
+"Textiles" = "Textilien";
+"Waste" = "Abfall";
+"Weapons" = "Waffen";
+"Others Commodities" = "Andere Waren";
+
+/* Plugin settings */
+"Fleet carrier call sign:" = "Träger ID:";
+"Fleet carrier last update:" = "letzte Aktualisierung:";
+"Load FC data" = "Trägerdaten laden";
+"Ignore event based cAPI Fleet Carrier update" = "Ereignisbasierte cAPI Fleet Carrier-Datenaktualisierung ignorieren";
+"Show commodity categories" = "Warenkategorien anzeigen";
+"Collapsable commodity categories" = "Zusammenklappbare Warenkategorien zulassen";
+"Commodity rows:" = "max. Zeilen der Warentabelle:";
+"List of tracked construction sites" = "Konstruktionsliste:";
+"Remove from tracking" = "Nicht weiter verfolgen";
+"Show station name line" = "Zeile Stationsnamen anzeigen";
+"Show totals line" = "Zeile aller Beuvorhaben anzeigen";
