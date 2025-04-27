@@ -1,26 +1,26 @@
 symbol,name,market,carrier
 *, Chemicals,                                            100,
 Explosives,                Explosives,                   103,    17
-LiquidOxygen,              Liquid oxygen,                108,    49
-Pesticides,                Pesticides,                   112,    60
+LiquidOxygen,              Liquid oxygen,                108,    50
+Pesticides,                Pesticides,                   112,    62
 SurfaceStabilisers,        Surface Stabilisers,          113,    18
 Water,                     Water,                        117,     7
 *, Consumer Items,                                       200,
 EvacuationShelter,         Evacuation Shelter,           210,    20
-SurvivalEquipment,         Survival Equipment,           224,    52
+SurvivalEquipment,         Survival Equipment,           224,    53
 *, Foods,                                                300,
 Animalmeat,                Animal Meat,                  304,    22
-Coffee,                    Coffee,                       314,    64
+Coffee,                    Coffee,                       314,    66
 Fish,                      Fish,                         321,    28
 FoodCartridges,            Food Cartridges,              322,    15
 FruitAndVegetables,        Fruit and Vegetables,         323,    44
 Grain,                     Grain,                        327,     4
-SyntheticMeat,             Synthetic Meat,               344,    50
+SyntheticMeat,             Synthetic Meat,               344,    51
 Tea,                       Tea,                          346,     2
 *, Industrial Materials,                                 400,
 CeramicComposites,         Ceramic Composites,           401,     6
 CMMComposite,              CMM Composite,                402,     8
-InsulatingMembrane,        Insulating Membrane,          403,    51
+InsulatingMembrane,        Insulating Membrane,          403,    52
 Polymers,                  Polymers,                     407,    14
 Semiconductors,            Semiconductors,               408,    16
 Superconductors,           Superconductors,              409,    13
@@ -29,46 +29,47 @@ Beer,                      Beer,                         503,    27
 Liquor,                    Liquor,                       518,     1
 Wine,                      Wine,                         533,    29
 *, Machinery,                                            600,
-BuildingFabricators,       Building Fabricators,         603,    62
+BuildingFabricators,       Building Fabricators,         603,    64
 CropHarvesters,            Crop Harvesters,              604,    19
 EmergencyPowerCells,       Emergency Power Cells,        605,    23
-GeologicalEquipment,       Geological Equipment,         608,    56
+GeologicalEquipment,       Geological Equipment,         608,    57
 HeliostaticFurnaces,       Microbial Furnaces,           615,    21
 MineralExtractors,         Mineral Extractors,           616,    10
-PowerGenerators,           Power Generators,             620,    53
+PowerGenerators,           Power Generators,             620,    54
 ThermalCoolingUnits,       Thermal Cooling Units,        625,    40
 WaterPurifiers,            Water Purifiers,              627,    26
 *, Medicines,                                            700,
-CombatStabilisers,         Combat Stabilisers,           706,    58
-AgriculturalMedicines,     Agri-Medicines,               703,    58
-BasicMedicines,            Basic Medicines,              705,    59
+CombatStabilisers,         Combat Stabilisers,           706,    60
+AgriculturalMedicines,     Agri-Medicines,               703,    59
+BasicMedicines,            Basic Medicines,              705,    61
 *, Metals,                                               800,
-Aluminium,                 Aluminium,                    801,    63
-Copper,                    Copper,                       806,    65
+Aluminium,                 Aluminium,                    801,    65
+Copper,                    Copper,                       806,    67
 Steel,                     Steel,                        823,     5
 Titanium,                  Titanium,                     827,    12
 *, Minerals,                                             900,
 *, Salvage,                                             1000,
 *, Slavery,                                             1100,
 *, Technology,                                          1200,
-AdvancedCatalysers,        Advanced Catalysers,         1201,    61
-AutoFabricators,           Auto-Fabricators,            1204,    48
+AdvancedCatalysers,        Advanced Catalysers,         1201,    63
+AutoFabricators,           Auto-Fabricators,            1204,    49
 BioReducingLichen,         Bioreducing Lichen,          1206,     9
-ComputerComponents,        Computer Components,         1208,    54
+ComputerComponents,        Computer Components,         1208,    55
 HazardousEnvironmentSuits, H.E. Suits,                  1210,    24
 TerrainEnrichmentSystems,  Land Enrichment Systems,     1212,    25
 MedicalDiagnosticEquipment,Medical Diagnostic Equipment,1213,     3
 MicroControllers,          Micro Controllers,           1214,    11
 MuTomImager,               Muon Imager,                 1215,    41
 ResonatingSeparators,      Resonating Separators,       1217,    42
-Robotics,                  Robotics,                    1218,    66
+Robotics,                  Robotics,                    1218,    68
 StructuralRegulators,      Structural Regulators,       1219,    45
 *, Textiles,                                            1300,
-MilitaryGradeFabrics,      Military Grade Fabrics,      1308,    67
-NaturalFabrics,            Natural Fabrics,             1309,    57
-SyntheticFabrics,          Synthetic Fabrics,           1311,    55
+MilitaryGradeFabrics,      Military Grade Fabrics,      1308,    69
+NaturalFabrics,            Natural Fabrics,             1309,    58
+SyntheticFabrics,          Synthetic Fabrics,           1311,    56
 *, Waste,                                               1400,
 Biowaste,                  Biowaste,                    1401,    43
 *, Weapons,                                             1500,
 NonLethalWeapons,          Non-Lethal Weapons,          1508,    46
 ReactiveArmour,            Reactive Armour,             1510,    47
+BattleWeapons,             Battle Weapons,              1501,    48
