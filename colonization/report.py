@@ -113,6 +113,27 @@ class ScrolledText(tk.Text):
             if m[0] != '_' and m != 'config' and m != 'configure':
                 setattr(self, m, getattr(self.frame, m))
 
+        self.bind("<Key>", lambda e: self._ctrl_event(e))
+
+    def _ctrl_event(self, event):
+        if event.state == 4 and event.keysym == 'c':
+            content = self.selection_get()
+            root = self.winfo_toplevel()
+            root.clipboard_clear()
+            root.clipboard_append(content)
+            return "break"
+        elif event.state == 4 and event.keysym == 'a':
+            self.tag_add(tk.SEL, "1.0", tk.END)
+            self.mark_set(tk.INSERT, "1.0")
+            self.see(tk.INSERT)
+            return "break"
+        #elif event.state == 4 and event.keysym == 'v':
+        #    root = self.winfo_toplevel()
+        #    self.insert('end', root.selection_get(selection='CLIPBOARD'))
+        #    return "break"
+        else:
+            return "break"
+
     def __str__(self):
         return str(self.frame)
 
@@ -168,7 +189,10 @@ class WindowReport:
         self.verbose_cb = tk.Checkbutton(self.frame, text=ptl("Verbose log"), variable=self.verbose_var)
         self.verbose_cb.grid(row=0, column=2, sticky=tk.E)
         tk.Button(self.frame, text=ptl("Generate report"), command=self._generate_report).grid(
-            row=1, columnspan=3
+            row=1, columnspan=2
+        )
+        tk.Button(self.frame, text=ptl("Copy"), command=self._copy_report).grid(
+            row=1, column=2
         )
         self.progress_lbl = tk.Label(self.frame, text=ptl('Progress:'))
         self.progress_lbl.grid(row=2, column=0, sticky=tk.EW)
@@ -185,6 +209,18 @@ class WindowReport:
         self.verbose = self.verbose_var.get()
         self.thread = threading.Thread(target=self._generate_report_worker, daemon=True)
         self.thread.start()
+
+    def _copy_report(self):
+        if self.logtext.tag_ranges("sel"):
+            content = self.logtext.selection_get()
+        else:
+            content = self.logtext.get("1.0", tk.END)
+        if not content or len(content.strip()) == 0:
+            self.progress_lbl['text'] = ptl("Report is not generated yet")
+        else:
+            self.toplevel.clipboard_clear()
+            self.toplevel.clipboard_append(content)
+            self.progress_lbl['text'] = ptl("Copied to clipboard")
 
     def _generate_report_worker(self):
         self.ui_queue.put(('clear', None))

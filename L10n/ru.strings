@@ -66,3 +66,6 @@
 "Generate report" = "Сгенерировать отчёт";
 "Progress:" = "Прогресс:";
 "Done" = "Готово";
+"Copy" = "Копировать";
+"Report is not generated yet" = "Отчёт ещё не сгенерирован";
+"Copied to clipboard" = "Скопировано в буфер обмена";
