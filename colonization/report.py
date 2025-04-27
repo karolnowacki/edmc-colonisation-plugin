@@ -169,6 +169,7 @@ class WindowReport:
         self.thread: Optional[threading.Thread] = None
         self.verbose: bool = False
         self.error_count: int = 0
+        self.start_time: datetime = datetime.now()
 
     def show(self):
         if self.toplevel:
@@ -228,7 +229,8 @@ class WindowReport:
         journal_dir = pathlib.Path.expanduser(pathlib.Path(journal_dir))
         journal_files = (x for x in os.listdir(journal_dir) if _RE_LOGFILE.search(x))
         today = datetime.now()
-        n_days_ago = (today - timedelta(days=7*int(self.weeks_var.get()))).timestamp()
+        self.start_time = today - timedelta(days=7*int(self.weeks_var.get()))
+        n_days_ago = self.start_time.timestamp()
         journal_files = (journal_dir / pathlib.Path(x) for x in journal_files)
         journal_files = (x for x in journal_files if os.path.getctime(x) > n_days_ago)
         journal_files = sorted(journal_files, key=getctime)
@@ -236,9 +238,13 @@ class WindowReport:
         with open(tracefile_name, "wt", encoding='utf-8') as tracefile:
             self.tracefile = tracefile
             self.toplevel.after(100, self.refresh_data)
+            self.stations = {}
             self.progress(ptl("Starting..."), 0)
+            self.log(f"Generating report for {self.weeks_var.get()} weeks, from: {self.start_time}\n")
             i = 0
             for logfile in journal_files:
+                if i == 0:
+                    self.start_time = datetime.fromtimestamp(os.path.getctime(logfile))
                 i += 1
                 with open(logfile, 'rb') as lh:
                     self.progress(basename(logfile), int((i*100) / len(journal_files)))
@@ -249,12 +255,19 @@ class WindowReport:
             self.progress(ptl("Done"), 100)
             self.ui_queue.put(('clear', None))
             tracefile.write('\nTotal:\n')
+            start_time_str = self.start_time.strftime('%Y-%m-%d %H:%M:%S')
+            self.log(f"Generated report for {self.weeks_var.get()} weeks, from: {start_time_str}\n")
             if self.error_count > 0:
                 self.log(f'Completed with {self.error_count} errors.\n')
             for station in self.stations.values():
                 if len(station.contributed):
                     for cmdr, contr in station.contributed.items():
-                        self.log(f'{cmdr}:\t{contr:6d} ton to "{station.name()}" ({station.star_system})\n')
+                        completed = '☐'
+                        if station.failed:
+                            completed = "☒"
+                        elif station.complete:
+                            completed = "☑"
+                        self.log(f'{cmdr}:\t{contr:6d} ton to "{station.name()}" ({station.star_system}) {completed}\n')
         self.tracefile = None
 
     def log(self, text: str, *, verbose: bool = False):
@@ -356,21 +369,14 @@ class WindowReport:
 
             elif event_type == "colonisationconstructiondepot":
                 market_id = entry['MarketID']
-                if self.market_id != market_id:
-                    self.error_count += 1
-                    self.log(f'Invalid "ColonisationConstructionDepot" entry: {market_id} != {self.market_id}\n')
-                    return
-                if market_id not in self.stations:
-                    self.error_count += 1
-                    self.log(f'Invalid "ColonisationConstructionDepot" entry: unknown marketId {market_id}\n')
-                    return
                 station = self.stations[market_id]
-                if entry['ConstructionComplete']:
-                    self.log(f'Construction complete: {station}\n', verbose=station.complete)
-                    station.complete = True
-                if entry['ConstructionFailed']:
-                    self.log(f'Construction failed: {station}\n', verbose=station.failed)
-                    station.failed = True
+                if station:
+                    if entry['ConstructionComplete'] and not station.complete:
+                        self.log(f'Construction complete: {station}\n', verbose=station.complete)
+                        station.complete = True
+                    if entry['ConstructionFailed'] and not station.failed:
+                        self.log(f'Construction failed: {station}\n', verbose=station.failed)
+                        station.failed = True
 
         except Exception as ex:  # pylint: disable= W0718
             self.error_count += 1
