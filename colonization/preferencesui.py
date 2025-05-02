@@ -127,23 +127,16 @@ class PreferencesUi:
             self.fc_last_update['text'] = str(carrier.last_sync)
 
     def call_capi_fc(self) -> None:
-        if session.state == Session.STATE_OK:
-            if self.fc_last_update:
-                self.fc_last_update['text'] = "Updating..."
-
-            carrier = session.requests_session.get(
-                session.capi_host_for_galaxy() + session.FRONTIER_CAPI_PATH_FLEETCARRIER)
-            data = carrier.json()
-            self.plugin.capi_fleetcarrier(data)
-            if self.fc_callsign and self.fc_last_update:
-                if self.plugin.carrier and self.plugin.carrier.call_sign:
-                    self.fc_callsign['text'] = str(self.plugin.carrier.call_sign)
-                    self.fc_last_update['text'] = str(self.plugin.carrier.last_sync)
-                else:
-                    self.fc_callsign['text'] = ""
-                    self.fc_last_update['text'] = "Missing Fleet Carrier data"
-        elif self.fc_last_update:
-            self.fc_last_update['text'] = "cAPI session is not open."
+        if self.fc_callsign and self.fc_last_update:
+            self.fc_last_update['text'] = "Updating..."
+            if not self.plugin.request_fc_data():
+                self.fc_last_update['text'] = "Cannot retrieve carrier data"
+            elif self.plugin.carrier and self.plugin.carrier.call_sign:
+                self.fc_callsign['text'] = str(self.plugin.carrier.call_sign)
+                self.fc_last_update['text'] = str(self.plugin.carrier.last_sync)
+            else:
+                self.fc_callsign['text'] = ""
+                self.fc_last_update['text'] = "Missing Fleet Carrier data"
 
     def prefs_changed(self, cmdr:str, is_beta:bool) -> None:  # pylint: disable=W0613
         if self.ignore_fc_update:

@@ -11,18 +11,25 @@ class FleetCarrier:
         self.cargo: dict[str, int] = {}
         self.last_sync: str | None = None
         self.call_sign: str | None = None
+        self.cmdr_name: str | None = None
         self.file_path: str | None = None
         self.auto_save: bool = False
 
-    def load(self, file_path: str, auto_save: bool = True) -> None:
+    def load(self, cmdr: str, file_path: str, auto_save: bool = True) -> None:
         self.file_path = file_path
         self.auto_save = auto_save
         if path.isfile(file_path):
             with open(file_path, 'r', encoding='utf-8') as file:
                 data = json.load(file)
+            if 'cmdr_name' in data and cmdr != data['cmdr_name']:
+                self.cargo = {}
+                self.last_sync = None
+                self.call_sign = None
+                return
+            self.cmdr_name = cmdr
             self.cargo = data.get('cargo', {})
-            self.last_sync = data.get('lastSync', None)
-            self.call_sign = data.get('callSign', None)
+            self.last_sync = data.get('last_sync', None)
+            self.call_sign = data.get('call_sign', None)
 
     def save(self, file_path: str | None = None) -> None:
         if file_path is None and self.auto_save:
@@ -32,11 +39,12 @@ class FleetCarrier:
         with open(file_path, 'w', encoding='utf-8') as file:
             json.dump(self, file, ensure_ascii=False, indent=4, cls=FleetCarrierEncoder, sort_keys=True)
 
-    def sync_data(self, data: CAPIData) -> Self | None:
+    def sync_data(self, cmdr: str, data: CAPIData) -> Self | None:
         self.call_sign = data['name']['callsign']
         if not self.call_sign:
             return None
         self.last_sync = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat()
+        self.cmdr_name = cmdr
 
         self.cargo = {}
         for c in data['cargo']:
@@ -50,6 +58,11 @@ class FleetCarrier:
 
     def get(self, commodity: str) -> int:
         return self.cargo.get(commodity, 0)
+
+    def set(self, commodity: str, qty: int) -> int:
+        self.cargo[commodity] = qty
+        self.save()
+        return self.cargo[commodity]
 
     def add(self, commodity: str, qty: int) -> int:
         if commodity in self.cargo:

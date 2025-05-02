@@ -12,6 +12,10 @@
 "SortingMode.MARKET" = "Market";
 "SortingMode.CARRIER" = "Carrier";
 "SortingMode.ALPHABET" = "Alphabet";
+"ViewMode.FULL" = "Full";
+"ViewMode.FILTERED" = "Filtered";
+"ViewMode.LACKS" = "Lacks";
+"ViewMode.NONE" = "Hide";
 
 /* Construction sites replacement */
 "$EXT_PANEL_ColonisationShip" = "Colonization Ship";
