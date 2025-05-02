@@ -5,7 +5,7 @@
 "Station" = "Станция";
 "Track this construction" = "Отслеживать строительство";
 "This construction is not tracked" = "Эта стройка не отслеживается";
-"Dock to construction site to start tracking progress = "Причальте к площадке, для отслеживания стройки";
+"Dock to construction site to start tracking progress" = "Причальте к площадке, для отслеживания стройки";
 "{} (docked)" = "{} (пристыкован)";
 "{} (not tracked)" = "{} (не отслеживается)";
 "Commodity" = "Материалы";
@@ -24,6 +24,8 @@
 "ViewMode.NONE" = "Спрятать таблицу";
 "Filter mode" = "Фильтр товаров";
 "Remaining {0:.1f} flights at {1} tons each, total {2} t" = "Осталось {0:.1f} ходок по {1} тонн, всего {2} тонн";
+"Enter new demand quantity for" = "Сколько требуется товара";
+"Enter new carrier quantity for" = "Сколько на авианосце товара";
 
 /* Construction sites replacement */
 "$EXT_PANEL_ColonisationShip" = "Колонизационный корабль";

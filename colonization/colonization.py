@@ -8,7 +8,7 @@ from typing import Any, Optional, Mapping
 from EDMCLogging import get_main_logger
 from monitor import monitor
 from config import config
-from companion import CAPIData
+from companion import CAPIData, requests, session, Session
 
 from .construction import Construction, ConstructionResource, ConstructionEncoder
 from .fleetcarrier import FleetCarrier
@@ -41,6 +41,7 @@ class ColonizationPlugin:
         self.markets: dict[str, list[str]] = {}
         self.current_market_id = None
         self.commodity_lang: str | None = None
+        self.cmdr_name: str | None = None
         logger.debug("initialized")
 
     def plugin_start3(self, plugin_dir: str) -> None:
@@ -66,12 +67,15 @@ class ColonizationPlugin:
         # pylint: disable=W0613,R0912
 
         if entry['event'] == 'StartUp' or entry['event'] == 'LoadGame':
+            self.cmdr_name = cmdr
             # switch cargo language to game language
             lang = state['GameLanguage'].split('/')[0]
             if lang in GAME_LANG_MAPPING.keys():
                 reloaded = self._load_commodity_sorting(GAME_LANG_MAPPING[lang])
                 if reloaded:
                     self.update_display()
+            self.carrier.load(cmdr, path.join(self.save_dir, 'fccargo.json'))
+            self.update_display()
 
         if entry['event'] == 'MarketBuy':
             self.add_cargo(entry['Type'], entry['Count'])
@@ -152,8 +156,22 @@ class ColonizationPlugin:
             self.update_display()
         return ''
 
+    def _request_fc_data(self, _event: Any) -> None:
+        self.request_fc_data()
+
+    def request_fc_data(self) -> bool:
+        if session.state != Session.STATE_OK:
+            return False
+        response = session.requests_session.get(
+            session.capi_host_for_galaxy() + session.FRONTIER_CAPI_PATH_FLEETCARRIER)
+        if not response.ok:
+            return False
+        data = response.json()
+        self.capi_fleetcarrier(data)
+        return True
+
     def capi_fleetcarrier(self, data: CAPIData) -> str:
-        self.carrier.sync_data(data)
+        self.carrier.sync_data(self.cmdr_name, data)
         self.update_display()
         return ''
 
@@ -174,8 +192,8 @@ class ColonizationPlugin:
                     market.append(comm.symbol.lower())
             self.markets[content["MarketID"]] = market
 
-    def update_display(self, event: Any = None) -> None:
-        # pylint: disable=W0613,R0912
+    def update_display(self, _event: Any = None) -> None:
+        # pylint: disable=R0912
         if self.ui:
             if self.current_construction:
                 short_name = self.current_construction.get_short_name()
@@ -200,7 +218,13 @@ class ColonizationPlugin:
                 docked_to = "construction"
             if self.carrier.call_sign and monitor.state['StationName'] == self.carrier.call_sign:
                 docked_to = "carrier"
-            self.ui.set_table(self.get_table(), docked_to)
+            carrier_id = self.carrier.call_sign if self.carrier.cmdr_name == self.cmdr_name else None
+            if self.ui.load_fc_btn:
+                if self.cmdr_name and not carrier_id and session.state == Session.STATE_OK:
+                    self.ui.load_fc_btn.grid()
+                else:
+                    self.ui.load_fc_btn.grid_remove()
+            self.ui.set_table(self.get_table(), docked_to, self.current_construction, carrier_id)
             if self.ui.track_btn and self.ui.total_label:
                 if self.docked_construction and self.current_construction_id is None:
                     self.ui.track_btn.grid()
@@ -300,7 +324,6 @@ class ColonizationPlugin:
             with open(file_path, 'r', encoding='utf-8') as file:
                 for c in json.load(file):
                     self.constructions.append(Construction(**c))
-        self.carrier.load(path.join(self.save_dir, 'fccargo.json'))
 
     def save(self) -> None:
         if self.save_dir is None:
@@ -337,10 +360,13 @@ class ColonizationPlugin:
         ui.on('prev', self._prev_construction)
         ui.on('next', self._next_construction)
         ui.on('track', self._track_station)
+        ui.on('load-fc', self._request_fc_data)
         ui.on('update', self.update_display)
+        ui.on('edit-demand', self._edit_demand)
+        ui.on('edit-carrier', self._edit_carrier)
         self.update_display()
 
-    def _prev_construction(self, event: Any) -> None:  # pylint: disable=W0613
+    def _prev_construction(self, _event: Any) -> None:
         if self.current_construction_id is None:
             return
         if self.current_construction_id < 0:
@@ -355,7 +381,7 @@ class ColonizationPlugin:
             self.current_construction = self.constructions[self.current_construction_id]
         self.update_display()
 
-    def _next_construction(self, event: Any) -> None:  # pylint: disable=W0613
+    def _next_construction(self, _event: Any) -> None:
         if self.current_construction_id is None:
             return
         self.current_construction_id += 1
@@ -419,6 +445,17 @@ class ColonizationPlugin:
             self.current_construction = None
         self.update_display()
         self.save()
+
+    def _edit_demand(self, value: tuple[str, int]):
+        if self.current_construction:
+            cr = self.current_construction.required[value[0].lower()]
+            cr.required = value[1] + cr.provided
+        self.update_display()
+
+    def _edit_carrier(self, value: tuple[str, int]):
+        if self.carrier:
+            self.carrier.set(value[0].lower(), value[1])
+        self.update_display()
 
     @classmethod
     def commodity_from_name(cls, name: str) -> str:
