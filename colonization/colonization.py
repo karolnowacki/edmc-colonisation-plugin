@@ -449,12 +449,12 @@ class ColonizationPlugin:
     def _edit_demand(self, value: tuple[str, int]):
         if self.current_construction:
             cr = self.current_construction.required[value[0].lower()]
-            cr.required = value[1] + cr.provided
+            cr.required = max(0,value[1]) + cr.provided
         self.update_display()
 
     def _edit_carrier(self, value: tuple[str, int]):
         if self.carrier:
-            self.carrier.set(value[0].lower(), value[1])
+            self.carrier.set(value[0].lower(), max(0,value[1]))
         self.update_display()
 
     @classmethod

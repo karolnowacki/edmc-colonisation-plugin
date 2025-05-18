@@ -267,15 +267,15 @@ class MainUi:
         dialog = AskQtyDialog(ptl("Enter new demand quantity for"),
                               t.commodity.name,
                               t.demand)
-        if qty := dialog.result:
-            self.event('edit-demand', (t.commodity.symbol, qty))
+        if dialog.result is not None:
+            self.event('edit-demand', (t.commodity.symbol, dialog.result))
 
     def _edit_carrier_quantity(self, t: TableEntry):
         dialog = AskQtyDialog(ptl("Enter new carrier quantity for"),
                               t.commodity.name,
                               t.carrier)
-        if qty := dialog.result:
-            self.event('edit-carrier', (t.commodity.symbol, qty))
+        if dialog.result is not None:
+            self.event('edit-carrier', (t.commodity.symbol, dialog.result))
 
     def _incr_top_rows(self, _event):
         page_size = self.max_rows_conf - 3
