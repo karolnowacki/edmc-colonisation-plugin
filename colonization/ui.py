@@ -1,15 +1,17 @@
 import tkinter as tk
+from tkinter import simpledialog, messagebox
 from abc import ABC, abstractmethod
 from os import path
-from functools import partial
 from enum import Enum
-from typing import Callable, Optional, Self
+from typing import Any, Callable, Optional, Self
 from collections import deque
 
 from theme import theme
 
 from .config import Config
 from .data import Commodity, TableEntry, ptl
+from .construction import Construction
+from .report import ReportLabel
 
 
 class SortingMode(Enum):
@@ -34,6 +36,59 @@ class CollapseMode(Enum):
     def __bool__(self):
         return self != CollapseMode.EXPANDED
 
+
+class AskQtyDialog(simpledialog.Dialog):
+
+    def __init__(self, prompt: str, commodity: str, value: int):
+
+        self.prompt = prompt
+        self.commodity = commodity
+        self.initial_value = value
+        self.entry: tk.Entry | None = None
+        self.result: int | None = None
+        simpledialog.Dialog.__init__(self, None)
+
+    def destroy(self):
+        self.entry = None
+        simpledialog.Dialog.destroy(self)
+
+    def body(self, master):
+        w = tk.Label(master, text=self.prompt)
+        w.grid(row=0, padx=5)
+        w = tk.Label(master, text=self.commodity)
+        w.grid(row=1, padx=5)
+
+        self.entry = tk.Entry(master, name="entry", justify=tk.RIGHT, width=7)
+        self.entry.grid(row=2, padx=5)
+
+        if self.initial_value is not None:
+            self.entry.insert(0, str(self.initial_value))
+            self.entry.select_range(0, tk.END)
+
+        return self.entry
+
+    def validate(self):
+        try:
+            result = self.getint(self.entry.get())
+        except ValueError:
+            messagebox.showwarning(
+                "Illegal value",
+                "Not an integer.\nPlease try again",
+                parent = self
+            )
+            return 0
+
+        if result < 0:
+            messagebox.showwarning(
+                "Too small",
+                "Negative value not allowed",
+                parent = self
+            )
+            return 0
+
+        self.result = result
+
+        return 1
 
 class CommodityCategory:
     def __init__(self, symbol: str, mode: CollapseMode = CollapseMode.EXPANDED):
@@ -69,11 +124,12 @@ class MainUi:
             'view_sort': tk.PhotoImage(file=path.join(self.iconDir, "view_sort.gif")),
             'resize': tk.PhotoImage(file=path.join(self.iconDir, "resize.gif")),
         }
-        self.subscribers: dict[str, Callable[[tk.Event | None], None]] = {}
+        self.subscribers: dict[str, Callable[[Any], None]] = {}
         self.title: Optional[tk.Label] = None
         self.station: Optional[tk.Label] = None
         self.total_label: Optional[tk.Label] = None
         self.track_btn: Optional[tk.Button] = None
+        self.load_fc_btn: Optional[tk.Button] = None
         self.sorting_btn: Optional[tk.OptionMenu] = None
         self.prev_btn: Optional[tk.Label] = None
         self.next_btn: Optional[tk.Label] = None
@@ -109,14 +165,14 @@ class MainUi:
         frame.grid(row=self.next_row(), column=0, sticky=tk.EW)
 
         self.prev_btn = tk.Label(frame, image=self.icons['left_arrow'], cursor="hand2")
-        self.prev_btn.bind("<Button-1>", partial(self.event, "prev"))
+        self.prev_btn.bind("<Button-1>", lambda _e: self.event("prev"))
         self.prev_btn.grid(row=0, column=0, sticky=tk.W)
 
         self.title = tk.Label(frame, text="", justify=tk.CENTER, anchor=tk.CENTER)
         self.title.grid(row=0, column=1, sticky=tk.EW)
 
         self.next_btn = tk.Label(frame, image=self.icons['right_arrow'], cursor="hand2")
-        self.next_btn.bind("<Button-1>", partial(self.event, "next"))
+        self.next_btn.bind("<Button-1>", lambda _e: self.event("next"))
         self.next_btn.grid(row=0, column=2, sticky=tk.W)
 
         self.view_mode_var.set(ptl(str(self.view_mode)))
@@ -127,7 +183,7 @@ class MainUi:
         self.view_btn.menu.add_separator()
         for v in list(ViewMode):
             self.view_btn.menu.add_radiobutton(label=ptl(str(v)), variable=self.view_mode_var, command=self.change_view)
-        self.view_btn.grid(row=0, column=3, sticky=tk.E)
+        self.view_btn.grid(row=0, column=3, padx=4, sticky=tk.E)
 
         self.sorting_var.set(ptl(str(self.sorting_mode)))
         self.sorting_btn = tk.Menubutton(frame, direction='below', image=self.icons['view_sort'], cursor="hand2")
@@ -136,8 +192,11 @@ class MainUi:
         self.sorting_btn.menu.add_command(label=ptl("Sorting mode"))
         self.sorting_btn.menu.add_separator()
         for v in list(SortingMode):
-            self.sorting_btn.menu.add_radiobutton(label=ptl(str(v)), variable=self.sorting_var, command=self.change_sorting)
-        self.sorting_btn.grid(row=0, column=4, sticky=tk.E)
+            self.sorting_btn.menu.add_radiobutton(label=ptl(str(v)), variable=self.sorting_var,
+                                                  command=self.change_sorting)
+        self.sorting_btn.grid(row=0, column=4, padx=4, sticky=tk.E)
+
+        ReportLabel(frame, text=ptl("Report")).grid(row=0, column=5, padx=(4, 0))
 
         theme.update(frame)
 
@@ -148,8 +207,12 @@ class MainUi:
         self.total_label.grid_configure(row=self.next_row(), column=0, sticky=tk.EW)
 
         self.track_btn = tk.Button(self.frame, text=ptl("Track this construction"),
-                                   command=partial(self.event, "track", None))
+                                   command=lambda: self.event("track"))
         self.track_btn.grid(row=self.next_row(), column=0, sticky=tk.EW, columnspan=5)
+
+        self.load_fc_btn = tk.Button(self.frame, text=ptl("Load FC data"),
+                                     command=lambda: self.event("load-fc"))
+        self.load_fc_btn.grid(row=self.next_row(), column=0, sticky=tk.EW, columnspan=5)
 
         self.table_frame = tk.Frame(self.frame, highlightthickness=1)
         self.table_frame.columnconfigure(0, weight=1)
@@ -163,11 +226,11 @@ class MainUi:
         theme.update(self.table_frame)
         theme.update(self.frame)
 
-    def event(self, event: str, tk_event: tk.Event | None) -> None:
+    def event(self, event: str, arg: Any = None) -> None:
         if event in self.subscribers:
-            self.subscribers[event](tk_event)
+            self.subscribers[event](arg)
 
-    def on(self, event: str, function: Callable[[tk.Event | None], None]) -> None:
+    def on(self, event: str, function: Callable[[Any], None]) -> None:
         self.subscribers[event] = function
 
     def change_view(self) -> None:
@@ -180,41 +243,55 @@ class MainUi:
         else:
             self.view_btn['image'] = self.icons['view_open']
             self.table_frame.grid(row=self.next_row(), column=0, sticky=tk.EW)
-        self.event('update', None)
+        self.event('update')
 
     def change_sorting(self):
         sorting = self.sorting_var.get()
         index = [ptl(str(e)) for e in SortingMode].index(sorting)
         self.sorting_mode = list(SortingMode)[index]
-        self.event('update', None)
+        self.event('update')
 
     def set_title(self, text: str) -> None:
         if self.title:
             self.title['text'] = text
 
-    def _toggle_category(self, event, c: str):  # pylint: disable=W0613
+    def _toggle_category(self, c: str):
         cc = self.categories[c]
         if cc.collapsed:
             cc.collapsed = CollapseMode.EXPANDED
         else:
             cc.collapsed = CollapseMode.COLLAPSED
-        self.event('update', None)
+        self.event('update')
 
-    def _incr_top_rows(self, event, rows: int):  # pylint: disable=W0613
+    def _edit_demand_quantity(self, t: TableEntry):
+        dialog = AskQtyDialog(ptl("Enter new demand quantity for"),
+                              t.commodity.name,
+                              t.demand)
+        if dialog.result is not None:
+            self.event('edit-demand', (t.commodity.symbol, dialog.result))
+
+    def _edit_carrier_quantity(self, t: TableEntry):
+        dialog = AskQtyDialog(ptl("Enter new carrier quantity for"),
+                              t.commodity.name,
+                              t.carrier)
+        if dialog.result is not None:
+            self.event('edit-carrier', (t.commodity.symbol, dialog.result))
+
+    def _incr_top_rows(self, _event):
         page_size = self.max_rows_conf - 3
         if self.top_rows == 0:
             page_size += 1
         rows = min(self.bottom_rows, page_size)
         self.top_rows += rows
-        self.event('update', None)
+        self.event('update')
 
-    def _decr_top_rows(self, event, rows: int):  # pylint: disable=W0613
+    def _decr_top_rows(self, _event):
         page_size = self.max_rows_conf - 3
         rows = min(self.top_rows, page_size)
         self.top_rows -= rows
         if self.top_rows <= 1:
             self.top_rows = 0
-        self.event('update', None)
+        self.event('update')
 
     def _show_category(self, row: int, cc: CommodityCategory):
         if not self.scrollable_conf and row >= self.max_rows_conf:
@@ -225,16 +302,16 @@ class MainUi:
 
         if cc.collapsed == CollapseMode.LEADING:
             self.table_view.draw_text(row, 'name', '▲ ({}) {}'.format(len(cc.rows), ptl(cc.symbol), crop=True))
-            self.table_view.bind_action(row, lambda e,cnt=len(cc.rows): self._decr_top_rows(e,cnt))
+            self.table_view.bind_action(row, 'name', 'double_arrow', self._decr_top_rows)
         elif cc.collapsed == CollapseMode.TRAILING:
             self.table_view.draw_text(row, 'name', '▼ ({}) {}'.format(len(cc.rows), ptl(cc.symbol)), crop=True)
-            self.table_view.bind_action(row, lambda e,cnt=len(cc.rows): self._incr_top_rows(e,cnt))
+            self.table_view.bind_action(row, 'name', 'double_arrow', self._incr_top_rows)
         elif self.collapsable_conf and not self.scrollable_conf:
             if cc.collapsed:
                 self.table_view.draw_text(row, 'name', '▶ ({}) {}'.format(len(cc.rows), ptl(cc.symbol)), crop=True)
             else:
                 self.table_view.draw_text(row, 'name', '▽ ' + ptl(cc.symbol))
-            self.table_view.bind_action(row, lambda e,category=cc.symbol: self._toggle_category(e,category))
+            self.table_view.bind_action(row, 'name', 'double_arrow', lambda _e, c=cc.symbol: self._toggle_category(c))
         else:
             self.table_view.draw_text(row, 'name', ptl(cc.symbol))
 
@@ -247,20 +324,26 @@ class MainUi:
             self.table_view.draw_text(row, 'demand', None)
             self.table_view.draw_text(row, 'buy', None)
 
-    def _show_commodity(self, row: int, i: TableEntry):
+    def _show_commodity(self, row: int, i: TableEntry, edit_demand: bool, show_carrier: bool):
         c: Commodity = i.commodity
 
         fg_color = theme.current['foreground'] if theme.current else 'black'
-        fg_name_color = fg_color if i.buy() <= 0 or i.available else 'dim gray' #'#FFF'
+        fg_name_color = fg_color if i.buy() <= 0 or i.available else 'dim gray'
         self.table_view.fg(fg_color)
 
         self.table_view.fg(fg_name_color).draw_text(row, 'name', c.name, crop=True)
         self.table_view.fg(fg_color).draw_text(row, 'demand', i.unload())
         self.table_view.fg(fg_color).draw_text(row, 'cargo', i.cargo)
-        self.table_view.fg(fg_color).draw_text(row, 'carrier', i.carrier)
         self.table_view.fg(fg_color).draw_text(row, 'buy', i.buy())
+        if edit_demand:
+            self.table_view.bind_action(row, 'demand', 'pencil', lambda _e, t=i: self._edit_demand_quantity(t))
+        if show_carrier:
+            self.table_view.fg(fg_color).draw_text(row, 'carrier', i.carrier)
+            self.table_view.bind_action(row, 'carrier', 'pencil', lambda _e, t=i: self._edit_carrier_quantity(t))
+        else:
+            self.table_view.draw_text(row, 'carrier', None)
 
-    def set_table(self, table: list[TableEntry], docked):
+    def set_table(self, table: list[TableEntry], docked: str, construction: Construction|None, carrier_id: str|None):
         self.commodity_table = table
 
         if not self.table_view:
@@ -305,6 +388,10 @@ class MainUi:
                 cc.rows.append(i)
             else:
                 display_list.append(i)
+        if self.view_mode == ViewMode.NONE:
+            self.top_rows = 0
+            self.bottom_rows = 0
+            display_list.clear()
         if self.scrollable_conf:
             self.top_rows = 0
         # collapse first rows into 'others'
@@ -327,7 +414,7 @@ class MainUi:
         row = 0
         for i in display_list:
             if isinstance(i, TableEntry):
-                self._show_commodity(row, i)
+                self._show_commodity(row, i, construction is not None, carrier_id is not None)
             else:
                 self._show_category(row, i)
             row += 1
@@ -394,7 +481,7 @@ class TableView(ABC):
         return self
 
     @abstractmethod
-    def bind_action(self, row: int, action: Callable) -> Self:
+    def bind_action(self, row: int, col: int|str, cursor: str, action: Callable) -> Self:
         return self
 
 
@@ -457,11 +544,18 @@ class FrameTableView(TableView):
         self.rows[row][cname]['text'] = text
         self.rows[row][cname]['fg'] = self._fg
         self.rows[row][cname].grid(row=row+1, column=col)
+        self.rows[row][cname].unbind("<Button-1>")
+        self.rows[row][cname].configure(cursor='')
         self.row = max(self.row, row)
 
-    def bind_action(self, row: int, action: Callable) -> Self:
+    def bind_action(self, row: int, col: int|str, cursor: str, action: Callable) -> Self:
+        if isinstance(col, int):
+            cname = self.COLUMNS[col]
+        else:
+            cname = col
         if row < len(self.rows):
-            self.rows[row]['name'].bind("<Button-1>", action)
+            self.rows[row][cname].bind("<Button-1>", action)
+            self.rows[row][cname].configure(cursor=cursor)
         return self
 
 
@@ -495,6 +589,7 @@ class CanvasTableView(TableView):
         self.frame = tk.Frame(parent, pady=3, padx=3)
         self.frame.grid(sticky=tk.NSEW)
         self.canvas: Optional[tk.Canvas] = None
+        self.tags: dict[int,int] = {}
         self.row = 0
         self.resizing = False
         self.resizing_y_start = 0
@@ -538,8 +633,10 @@ class CanvasTableView(TableView):
             self.canvas.config(height=height)
 
     def draw_start(self):
+        self.tags = {}
         self.row = 0
         self.canvas.delete('all')
+        self.canvas.unbind_all("<Button-1>")
         self.draw_text(-1, 0, ptl("Commodity"))
         self.draw_text(-1, 1, ptl("Buy"))
         self.draw_text(-1, 2, ptl("Demand"))
@@ -577,9 +674,15 @@ class CanvasTableView(TableView):
             x += 5 + self.COLUMN_WIDTH[col] / 2
         elif col > 0:
             x += self.COLUMN_WIDTH[col]
-        self.canvas.create_text(x, y, text=text, fill=self._fg, **attr)
+        tag = self.canvas.create_text(x, y, text=text, fill=self._fg, **attr)
+        self.tags[col*1000 + row] = tag
         self.row = max(self.row, row)
 
-    def bind_action(self, row: int, action: Callable) -> Self:   # pylint: disable=W0613
-        # not implemented
+    def bind_action(self, row: int, col: int|str, cursor: str, action: Callable) -> Self:
+        row += 1  # first row is table labels
+        if isinstance(col, str):
+            col = self.COLUMNS.index(col)
+        tag_id = col*1000 + row
+        if tag_id in self.tags:
+            self.canvas.tag_bind(self.tags[tag_id], "<Button-1>", action)
         return self

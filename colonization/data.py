@@ -18,7 +18,8 @@ def ptl(x: str) -> str:
 
 class Commodity:
     ID_TO_COMMODITY_MAP = {}
-    def __init__(self, symbol:str, category:str, name:str):
+
+    def __init__(self, symbol: str, category: str, name: str):
         self.symbol = symbol.strip() if symbol else ''
         self.category = category
         self.name = name.strip() if name else self.symbol
@@ -27,7 +28,7 @@ class Commodity:
 
 
 class TableEntry:
-    def __init__(self, commodity:Commodity, demand:int, cargo:int, carrier:int, available:bool):
+    def __init__(self, commodity: Commodity, demand: int, cargo: int, carrier: int, available: bool):
         self.commodity = commodity
         self.demand = demand
         self.cargo = cargo
