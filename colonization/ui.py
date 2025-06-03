@@ -65,6 +65,7 @@ class MainUi:
         self.station: Optional[tk.Label] = None
         self.total_label: Optional[tk.Label] = None
         self.track_btn: Optional[tk.Button] = None
+        self.export_btn: Optional[tk.Button] = None
         self.prev_btn: Optional[tk.Label] = None
         self.next_btn: Optional[tk.Label] = None
         self.view_btn: Optional[tk.Label] = None
@@ -156,6 +157,9 @@ class MainUi:
                 label.grid_remove()
             self.rows.append(labels)
 
+        self.export_btn = tk.Button(self.frame, text=ptl('Copy to clipboard'), command=partial(self.event, "export", None))
+        self.export_btn.grid(row=self.next_row(), column=0, sticky=tk.EW, columnspan=5)
+        
         theme.update(self.table_frame)
         theme.update(self.frame)
 

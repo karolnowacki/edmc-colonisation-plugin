@@ -2,6 +2,7 @@ import csv
 import json
 import re
 import os
+import tkinter as tk
 from os import path
 from typing import Any, Optional
 
@@ -285,6 +286,7 @@ class ColonizationPlugin:
         ui.on('next', self.next_construction)
         ui.on('track', self.track_station)
         ui.on('update', self.update_display)
+        ui.on('export', self.export_current)
         self.update_display()
 
     def prev_construction(self, event: Any) -> None:
@@ -366,6 +368,20 @@ class ColonizationPlugin:
             self.currentConstruction = None
         self.update_display()
         self.save()
+
+    def export_current(self, event: Any) -> None:
+        fields = ['name', 'buy', 'demand', 'cargo', 'carrier']
+        stringValue = '\t'.join(fields) + '\n'
+        data = self.get_table()
+        for commodity in data:
+            stringValue += commodity.export() + '\n'
+        # Use tkinter to handle clipboard operations
+        root = tk.Tk()
+        root.withdraw()  # Hide the main tkinter window
+        root.clipboard_clear()
+        root.clipboard_append(stringValue)
+        root.update()  # Ensure clipboard is updated
+        root.destroy()
 
     @classmethod
     def commodity_from_name(cls, name: str) -> str:
