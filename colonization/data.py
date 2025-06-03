@@ -43,3 +43,7 @@ class TableEntry:
         if result < 0:
             result = 0
         return result
+    
+    def export(self) -> str:
+        result = self.commodity.name + '\t' + str(self.buy()) + '\t' + str(self.demand) + '\t' + str(self.cargo) + '\t' + str(self.carrier)
+        return result
